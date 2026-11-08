@@ -40,8 +40,13 @@ def validate_proposal(role, value):
             raise PolicyError('Invalid Red proposal schema/path')
         if not isinstance(value['description'], str) or not 1 <= len(value['description']) <= 2000:
             raise PolicyError('Missing or oversized finding description')
-        if (value['user'], value['record_id']) not in [('alice', 'two'), ('bob', 'one')]:
-            raise PolicyError('Red did not identify the supported cross-owner case')
+        records = ast.literal_eval(ast.parse(VULNERABLE).body[0].value)
+        user, record_id = value['user'], value['record_id']
+        if (not isinstance(user, str) or not 1 <= len(user) <= 128
+            or not isinstance(record_id, str) or record_id not in records
+            or user == records[record_id]['owner']):
+            detail = json.dumps({'user': user, 'record_id': record_id}, ensure_ascii=True)[:500]
+            raise PolicyError('Red case must use an existing record and a different non-null caller: ' + detail)
     elif role == 'blue':
         if set(value) != {'file', 'content'} or value['file'] != 'service.py':
             raise PolicyError('Invalid Blue proposal schema/path')
@@ -83,7 +88,9 @@ def prompt(req):
     if role == 'red':
         instruction = ('Find an access-control defect. Schema: {"file":"service.py",'
                        '"description":"explanation","user":"caller","record_id":"record"}. '
-                       'Give a concrete caller and record demonstrating unauthorized access.\n')
+                       'Use literal argument values, not placeholders or expressions. record_id must be an exact '
+                       'key from RECORDS; user must be a non-empty string different from that record owner. '
+                       'Do not use null, an owner reading their own record, or a nonexistent record.\n')
     else:
         instruction = ('Fix only the missing ownership check in read_record, preserving all other code. '
                        'Unauthorized access must return 403, None. Schema: {"file":"service.py","content":"complete Python source"}.\n')

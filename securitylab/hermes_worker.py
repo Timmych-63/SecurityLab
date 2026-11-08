@@ -9,7 +9,7 @@ from .ai_contract import HERMES_REVISION, MODEL, MODEL_DIGEST, prompt, strict_js
 from .policy import PolicyError
 
 
-def invoke(req, agent_class):
+def invoke(req, agent_class, capture=None):
     query = prompt(req)
     agent = agent_class(model=MODEL, base_url='http://model:11434/v1', api_key='local-only',
                         provider='custom', api_mode='chat_completions', enabled_toolsets=[],
@@ -30,7 +30,11 @@ def invoke(req, agent_class):
     for message in result.get('messages', []):
         if message.get('role') == 'tool' or message.get('tool_calls'):
             raise PolicyError('Unexpected tool invocation')
-    value = strict_json(result.get('final_response'))
+    raw_response = result.get('final_response')
+    # Capture bounded, escaped text before parsing/validation, including rejected replies.
+    if capture is not None:
+        capture(raw_response[:32768] if isinstance(raw_response, str) else None)
+    value = strict_json(raw_response)
     if req['role'] == 'smoke':
         if value != {'ready': True} or type(value['ready']) is not bool:
             raise PolicyError('Smoke response invalid')
@@ -63,7 +67,8 @@ def main():
         with contextlib.redirect_stdout(sys.stderr):
             sys.path.insert(0, '/opt/hermes')
             from run_agent import AIAgent
-            value = invoke(req, AIAgent)
+            value = invoke(req, AIAgent, capture=lambda raw: print(
+                'AI_RESPONSE_JSON=' + json.dumps(raw, ensure_ascii=True), file=sys.stderr))
         print(json.dumps({'schema_version': 1, 'role': req['role'], 'request_sha256': digest(req),
                           'hermes_revision': HERMES_REVISION, 'model': MODEL,
                           'model_digest': selected[0]['digest'], 'tools': [], 'proposal': value}))

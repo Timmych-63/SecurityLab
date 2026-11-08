@@ -48,3 +48,8 @@
 - Added ai-smoke/ai-demo, bounded transport, cleanup and immutable image identification.
 - Added Windows setup script and 19 tests (109 total).
 - Verified actual Hermes API with a fake model endpoint; live inference not yet verified.
+
+## S4.1
+- Confirmed user real Hermes/model smoke PASS; AI exercise blocked at Red.
+- Generalized synthetic Red caller/record validation; retain rejected raw responses.
+- Clarified literal-value prompt and added four regression tests.

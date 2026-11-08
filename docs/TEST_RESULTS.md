@@ -75,3 +75,7 @@ scripted-demo-docker-no-ai, attempts=1, error=null. Accepted for synthetic scope
 Actual pinned Hermes Python API exercised against fake HTTP model: PASS,
 hermes-api-probe-output.txt. No real model inference or Docker in development environment.
 Windows S4/live model/build: NOT TESTED pending user output.
+
+## S4.1
+113 tests PASS (29.469s), test-s41-output.txt. Live S4.1 pending.
+User S4 real Hermes/model smoke PASS; full exercise blocked at Red before execution.

@@ -127,3 +127,24 @@ class TransportTests(unittest.TestCase):
                 with self.assertRaises(PolicyError):HermesAdapter(Path(directory),Path(directory)/'calls',fake).ask(request('smoke'))
                 if bad!='network':self.assertTrue(any('rm' in x for x in fake.calls))
                 if bad=='privileged':self.assertFalse(any('start' in x for x in fake.calls))
+
+class RedRegressionTests(unittest.TestCase):
+    def test_unknown_caller_cross_owner_is_valid(self):
+        validate_proposal('red', dict(RED, user='mallory'))
+    def test_invalid_cases_are_denied(self):
+        for user, record_id in [('bob','two'), (None,'two'), ('alice','missing'), ('caller','record'), ([], 'two'), ('', 'two')]:
+            with self.subTest(user=user,record_id=record_id), self.assertRaises(PolicyError):
+                validate_proposal('red', dict(RED,user=user,record_id=record_id))
+    def test_rejected_raw_response_captured_before_validation(self):
+        class InvalidAgent(Agent):
+            tool_list=[]; messages=[]
+            reply=json.dumps(dict(RED,user='bob'))
+        captured=[]
+        with self.assertRaises(PolicyError):invoke(request('red'),InvalidAgent,captured.append)
+        self.assertEqual(captured,[InvalidAgent.reply])
+    def test_malformed_reply_is_also_captured(self):
+        class InvalidAgent(Agent):
+            tool_list=[]; messages=[]; reply='not JSON'
+        captured=[]
+        with self.assertRaises(PolicyError):invoke(request('red'),InvalidAgent,captured.append)
+        self.assertEqual(captured,['not JSON'])

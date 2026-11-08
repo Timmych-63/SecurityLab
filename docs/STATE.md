@@ -28,3 +28,10 @@ Dashboard is the main UI; minimal CLI and HTML/JSON reports remain.
 No arbitrary-project scan, cloud fallback, automatic merge or model-declared FIXED.
 No hard-kill orphan reaper or resumable AI queue yet. Current AI workflow canonicalizes
 only the reviewed AST; it is not a general autonomous security audit.
+
+## S4.1 current checkpoint
+User real ai-smoke PASS: a71a05e55388407788b15700a93cdd09.
+S4 build/model/inference accepted; full AI cycle BLOCKED at Red in run
+7b4972e37f7748908c658468e994babf. Original rejected response was not retained.
+S4.1 replaces the two-pair whitelist and logs rejected replies. See S4_1_RED_FIX.md.
+Next: cached Hermes rebuild then ai-demo only. Full cycle remains pending.
