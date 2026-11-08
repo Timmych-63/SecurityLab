@@ -17,6 +17,7 @@ def invoke(req, agent_class):
                         skip_background_review=True, load_soul_identity=False,
                         save_trajectories=False, max_iterations=2, max_tokens=2048,
                         run_budget_seconds=240, fallback_model=None,
+                        reasoning_config={'enabled': False},
                         request_overrides={'temperature': 0})
     if agent.tools:
         raise PolicyError('Hermes unexpectedly enabled tools')
