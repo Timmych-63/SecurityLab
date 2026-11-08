@@ -27,4 +27,6 @@ PASS относится только к явно указанной област
 S1: 16 проверок конфигурации PASS по предоставленному выводу пользователя.
 Dashboard согласован, реализация NOT TESTED / ещё не начата.
 
-S2: код broker/worker и contract-тесты готовы; живые пять Docker-сценариев NOT TESTED.
+S2: код broker/worker и contract-тесты готовы; живые пять Docker-сценариев PASS по выводу пользователя, cleanup PASS для всех.
+
+S3: соединение очереди с S2 и проверка receipts реализованы. Live полный Docker-цикл NOT TESTED.

@@ -99,3 +99,13 @@ stdin-потоком с передачей EOF. Источник входа не
 Broker → Docker create/inspect → stdin job → ограниченное выполнение → rm/проверка cleanup.
 Доказательства S2 пока не принимаются основным валидатором: stdout недоверен.
 Реализован Python-only механизм, не универсальный тестовый стенд. См. S2_RUNNER.md.
+
+## S3: соединение оркестратора с S2
+
+Store.mode → Orchestrator → DockerFixtureRunner → DockerBroker → container_worker.
+DockerFixtureRunner проверяет точные fixture bytes и формирует неизменяемый пакет.
+Внешние JSON receipts связываются с SQLite evidence через ID, digest и binding.
+При финальном VERIFIED перечитываются все пять receipts, затем применяется валидатор.
+Отмена передаётся от SQLite stop к процессу attach и cleanup контейнера.
+Новый режим не меняет schema v1 и не включает автоматический fallback на хост.
+Граница доказательств ограничена известным fixture; не путать с произвольным AI-кодом.

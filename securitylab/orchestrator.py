@@ -8,7 +8,8 @@ from .storage import Store, atomic_text, worker_lock
 from .validator import confirmed, validate
 
 class Orchestrator:
-    def __init__(self, store: Store, limits=Limits()):
+    def __init__(self, store: Store, limits=Limits(), docker_broker_factory=None):
+        self.docker_broker_factory = docker_broker_factory
         self.store = store
         self.limits = limits
         self.runner = FixtureRunner(limits)
@@ -84,6 +85,15 @@ class Orchestrator:
             if not self.store.begin(rid, self.limits.max_attempts):
                 return self.store.get(rid)
             try:
+                mode = self.store.get(rid)['mode']
+                if mode == 'scripted-demo-docker-no-ai':
+                    from .docker_fixture import DockerFixtureRunner
+                    broker = self.docker_broker_factory() if self.docker_broker_factory else None
+                    self.runner = DockerFixtureRunner(rid, self.store.root / 'runs' / rid / 'receipts', self.limits, broker)
+                elif mode == 'scripted-demo-no-ai':
+                    self.runner = FixtureRunner(self.limits)
+                else:
+                    raise PolicyError('Unknown stored execution mode')
                 while True:
                     row = self.store.get(rid)
                     if row['stop']:
@@ -101,11 +111,11 @@ class Orchestrator:
                             reproduction='alice reads record two owned by bob',
                             expected=[403, None], actual=[200, 'synthetic-B'],
                             recommendation='Check owner before returning value',
-                            status='HYPOTHESIS', mode='scripted-demo-no-ai')
+                            status='HYPOTHESIS', mode=mode)
                         self.store.advance(rid, stage, 'DISCOVERED', finding=finding)
                     elif stage == 'DISCOVERED':
                         git = DemoGit(repo)
-                        baseline = self.runner.suite(repo, git.head(), False, stop)
+                        baseline = self.runner.suite(repo, git.head(), False, stop, kind='baseline')
                         if not confirmed(baseline):
                             raise PolicyError('Baseline proof failed; cannot confirm')
                         finding = self.store.finding(rid) | {'status': 'CONFIRMED'}
@@ -121,13 +131,18 @@ class Orchestrator:
                         revision = git.head()
                         evidence = {'regression': self.runner.regression(repo, revision, stop),
                                     'build': self.runner.build(repo, revision, stop),
-                                    'mandatory': self.runner.suite(repo, revision, True, stop),
-                                    'recheck': self.runner.suite(repo, revision, True, stop)}
+                                    'mandatory': self.runner.suite(repo, revision, True, stop, kind='mandatory'),
+                                    'recheck': self.runner.suite(repo, revision, True, stop, kind='recheck')}
                         self.store.advance(rid, stage, 'VERIFIED', evidence)
                     elif stage == 'VERIFIED':
                         git = DemoGit(repo)
                         self.runner.check_source(repo, FIXED)
                         verdict = validate(self.store.evidence(rid), git.head(), git.clean(), git.call('rev-parse', 'main'))
+                        receipt_errors = self.runner.audit(self.store.evidence(rid))
+                        if receipt_errors:
+                            verdict['status'] = 'NEEDS_REVIEW'
+                            verdict['reasons'].extend(receipt_errors)
+                        verdict['executor'] = 'docker' if mode == 'scripted-demo-docker-no-ai' else 'local'
                         self.store.advance(rid, stage, 'DONE', {'verdict': verdict},
                             self.store.finding(rid) | {'status': verdict['status']})
                     elif stage == 'DONE':

@@ -60,3 +60,8 @@ Docker Linux Engine, сборка образа и demo DONE подтвержде
 DockerBroker в этих проверках использует FakeDocker: живой Docker S2 NOT TESTED.
 Фактические пять сценариев --self-test требуется выполнить на ПК пользователя.
 S1 на ПК пользователя уже подтверждён: 16 PASS, b4f21324bcaf419ea62cece28fecb87c.
+
+## S3 — 2026-11-08
+
+`python3 -m unittest discover -s tests -v`: 90 tests, all PASS, 28.809 s.
+Full output: test-s3-output.txt. Docker workflow tests use a mock broker that runs only reviewed fixture constants locally. Live Docker S3: NOT TESTED in this environment. User confirmed S1 (16 PASS) and S2 (5 scenarios, cleanup PASS) on Windows before this update.

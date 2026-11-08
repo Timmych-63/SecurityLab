@@ -7,7 +7,7 @@ def report(store, rid, output: Path):
     body = {'schema_version': 1, 'run': store.get(rid), 'finding': store.finding(rid),
             'evidence': store.evidence(rid), 'history': store.history(rid),
             'limitations': ['Scripted demo without AI', 'Only synthetic fixture evaluated',
-                            'Docker, Hermes, GPU and Windows integration not verified']}
+                            'Real AI, arbitrary-project acceptance and GPU not verified']}
     output.mkdir(parents=True, exist_ok=True)
     atomic_text(output / 'report.json', json.dumps(body, ensure_ascii=False, indent=2))
     finding = body['finding'] or {}

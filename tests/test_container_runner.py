@@ -93,6 +93,18 @@ class BrokerTests(unittest.TestCase):
         self.assertTrue((self.root/'results'/(result['id']+'.json')).is_file())
         self.assertIn('UNTRUSTED',result['output_trust'])
         return result
+    def test_stop_before_create_does_not_launch(self):
+        broker=DockerBroker(self.root,self.fake)
+        result=broker.run(job_bytes({'task.py':'pass'}),self.root/'results',stop=lambda:True)
+        self.assertEqual(result['status'],'CANCELLED')
+        self.assertEqual(result['cleanup'],'PASS')
+        self.assertFalse(any('create' in argv for argv,_ in self.fake.calls))
+    def test_binding_is_saved_outside_job_payload(self):
+        broker=DockerBroker(self.root,self.fake)
+        binding={'run_id':'a'*32,'kind':'baseline'}
+        result=broker.run(job_bytes({'task.py':'pass'}),self.root/'results',binding=binding)
+        saved=json.loads((self.root/'results'/(result['id']+'.json')).read_text(encoding='utf-8'))
+        self.assertEqual(saved['binding'],binding)
     def test_intent_saved_before_create(self):
         def assert_intent():
             records=list((self.root/'results').glob('*.json'))

@@ -16,7 +16,7 @@ class FixtureRunner:
             raise PolicyError('Untrusted source: host execution denied')
         return path
 
-    def suite(self, repo, revision, fixed, stop=lambda: False):
+    def suite(self, repo, revision, fixed, stop=lambda: False, kind=None):
         source = FIXED if fixed else VULNERABLE
         path = self.check_source(repo, source)
         result = execute([sys.executable, '-I', '-B', '-c', SUITE, str(path)], repo, self.limits, stop)
@@ -46,3 +46,6 @@ class FixtureRunner:
                           'import pathlib,sys; compile(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"),"service.py","exec")',
                           str(path)], repo, self.limits, stop)
         return dict(result=result.data(), revision=revision, source_hash=digest(FIXED))
+
+    def audit(self, evidence):
+        return []  # Local mode is restricted to byte-identical built-in fixtures.

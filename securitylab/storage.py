@@ -45,12 +45,14 @@ class Store:
         self.db.execute("INSERT INTO events(run_id,time,type,body) VALUES(?,?,?,?)",
                         (rid, time.time(), kind, json.dumps(body, ensure_ascii=False)))
 
-    def create(self):
+    def create(self, mode="scripted-demo-no-ai"):
+        if mode not in {"scripted-demo-no-ai", "scripted-demo-docker-no-ai"}:
+            raise PolicyError("Unknown execution mode")
         rid = uuid.uuid4().hex
         with self.db:
             self.db.execute("INSERT INTO runs(id,stage,status,mode,created) VALUES(?,?,?,?,?)",
-                            (rid, "QUEUED", "QUEUED", "scripted-demo-no-ai", time.time()))
-            self.event(rid, "created", {"mode": "scripted-demo-no-ai"})
+                            (rid, "QUEUED", "QUEUED", mode, time.time()))
+            self.event(rid, "created", {"mode": mode})
         return rid
 
     def get(self, rid):

@@ -11,7 +11,7 @@ from .report import report
 from .storage import Store, worker_lock
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog='securitylab', description='SecurityLab M1/M2 — explicit scripted demo, no AI')
+    parser = argparse.ArgumentParser(prog='securitylab', description='SecurityLab — scripted demo, no AI; select --executor docker for isolation')
     parser.add_argument('--state', type=Path, default=Path('.securitylab'))
     parser.add_argument('--config', type=Path)
     parser.add_argument('--version', action='version', version=__version__)
@@ -20,6 +20,7 @@ def main(argv=None):
     sub.add_parser('doctor')
     demo = sub.add_parser('demo')
     demo.add_argument('--enqueue', action='store_true')
+    demo.add_argument('--executor', choices=['local', 'docker'], default='local')
     worker = sub.add_parser('worker')
     worker.add_argument('--run')
     for cmd in ('stop', 'retry', 'rollback', 'findings', 'history'):
@@ -50,10 +51,12 @@ def main(argv=None):
         if args.command == 'init':
             result = {'state': str(store.root), 'schema_version': 1}
         elif args.command == 'demo':
-            rid = store.create()
+            rid = store.create("scripted-demo-docker-no-ai" if args.executor == "docker" else "scripted-demo-no-ai")
             result = store.get(rid) if args.enqueue else engine.run(rid)
             if not args.enqueue:
-                report(store, rid, store.root / 'runs' / rid / 'report')
+                report_path = report(store, rid, store.root / 'runs' / rid / 'report')
+                result['finding_status'] = (store.finding(rid) or {}).get('status')
+                result['report'] = str(report_path)
         elif args.command == 'worker':
             ids = [args.run] if args.run else [r['id'] for r in store.runs() if r['status'] in {'QUEUED', 'RUNNING'}]
             result = [engine.run(rid) for rid in ids]

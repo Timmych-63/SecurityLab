@@ -15,7 +15,7 @@ def result_ok(evidence, code=0):
 def confirmed(e):
     checks = e.get('checks', {})
     return (result_ok(e, 1) and e.get('source_hash') == digest(VULNERABLE)
-            and e.get('test_hash') == digest(SUITE) and set(checks) == ALL_CHECKS
+            and e.get('test_hash') == digest(SUITE) and isinstance(checks, dict) and set(checks) == ALL_CHECKS
             and all(checks[k] is True for k in BASE_CHECKS)
             and all(checks[k] is False for k in ACCESS_CHECKS)
             and e.get('observed') == [200, 'synthetic-B'])
@@ -39,7 +39,7 @@ def validate(evidence, current_revision, clean, main_revision):
     for name in ('recheck', 'mandatory'):
         e = evidence.get(name, {})
         checks = e.get('checks', {})
-        if e.get('test_hash') != baseline.get('test_hash') or set(checks) != ALL_CHECKS or any(v is not True for v in checks.values()):
+        if not isinstance(checks, dict) or e.get('test_hash') != baseline.get('test_hash') or set(checks) != ALL_CHECKS or any(v is not True for v in checks.values()):
             reasons.append(f'{name}: original protected suite was not passed')
     if evidence.get('regression', {}).get('test_hash') != digest(REGRESSION):
         reasons.append('Regression suite changed')

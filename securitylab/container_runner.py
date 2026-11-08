@@ -49,24 +49,31 @@ class DockerBroker:
             raise PolicyError('Images with implicit volumes are not allowed')
         self.image_id = details[0]['Id']
 
-    def call(self, args, *, check=True, limits=None, input_data=None):
-        r = self.execute(self.prefix + args, self.cwd, limits or Limits(), input_data=input_data)
+    def call(self, args, *, check=True, limits=None, input_data=None, stop=None):
+        options = {"input_data": input_data}
+        if stop is not None:
+            options["stop"] = stop
+        r = self.execute(self.prefix + args, self.cwd, limits or Limits(), **options)
         if check and not r.passed:
             raise PolicyError('Docker command failed: ' + r.stderr[:1000])
         return r
 
-    def run(self, payload: bytes, output: Path, limits=Limits()):
+    def run(self, payload: bytes, output: Path, limits=Limits(), *, binding=None, stop=None):
         parse_job(payload)  # Reject invalid payloads before invoking Docker.
         rid = uuid.uuid4().hex
         name = 'securitylab-job-' + rid
         record = {'schema_version': 1, 'id': rid, 'container': name, 'image_id': self.image_id,
                   'payload_sha256': hashlib.sha256(payload).hexdigest(), 'status': 'BLOCKED',
                   'output_trust': 'UNTRUSTED_JOB_OUTPUT; not proof of a fixed vulnerability',
-                  'cleanup': 'NOT_TESTED'}
+                  'cleanup': 'NOT_TESTED', 'binding': dict(binding) if binding is not None else None}
         # Durable intent allows diagnosis if the host process is killed before finally.
         atomic_text(output / (rid + '.json'), json.dumps(record, ensure_ascii=False, indent=2))
         attempted_create = False
         try:
+            if stop is not None and stop():
+                record["status"] = "CANCELLED"
+                record["cleanup"] = "PASS"
+                return record
             attempted_create = True
             self.call(create_args(self.image_id, name))
             # Protect against unexpected Docker defaults/mounts before execution.
@@ -85,7 +92,7 @@ class DockerBroker:
                 or any(m.get('Type') in {'bind', 'volume'} for m in inspect.get('Mounts', []))):
                 raise PolicyError('Container inspect rejected unsafe settings')
             record['execution'] = self.call(['start', '--attach', '--interactive', name],
-                                           check=False, limits=limits, input_data=payload).data()
+                                           check=False, limits=limits, input_data=payload, stop=stop).data()
             r = record['execution']
             if r['timed_out'] or r['cancelled'] or r['truncated']:
                 record['status'] = 'TIMEOUT' if r['timed_out'] else ('CANCELLED' if r['cancelled'] else 'OUTPUT_LIMIT')
