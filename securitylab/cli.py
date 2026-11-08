@@ -11,13 +11,15 @@ from .report import report
 from .storage import Store, worker_lock
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog='securitylab', description='SecurityLab — scripted demo, no AI; select --executor docker for isolation')
+    parser = argparse.ArgumentParser(prog='securitylab', description='SecurityLab — isolated fixture checks and constrained Hermes proposals')
     parser.add_argument('--state', type=Path, default=Path('.securitylab'))
     parser.add_argument('--config', type=Path)
     parser.add_argument('--version', action='version', version=__version__)
     sub = parser.add_subparsers(dest='command', required=True)
     sub.add_parser('init')
     sub.add_parser('doctor')
+    sub.add_parser('ai-smoke')
+    sub.add_parser('ai-demo')
     demo = sub.add_parser('demo')
     demo.add_argument('--enqueue', action='store_true')
     demo.add_argument('--executor', choices=['local', 'docker'], default='local')
@@ -38,7 +40,7 @@ def main(argv=None):
         print(json.dumps({'python': sys.version.split()[0], 'core': 'PASS',
               **{x: 'AVAILABLE_NOT_TESTED' if shutil.which(x) else 'BLOCKED_NOT_INSTALLED'
                  for x in ('git', 'docker', 'hermes', 'ollama', 'nvidia-smi')},
-              'note': 'Availability is not an integration test'}, indent=2))
+              'note': 'Host executable availability only; container Hermes/model integration is tested by ai-smoke'}, indent=2))
         return 0
     if args.command == 'scan':
         print('BLOCKED: arbitrary repository execution needs a verified isolated runner and live AI integration. No project files changed.', file=sys.stderr)
@@ -48,6 +50,11 @@ def main(argv=None):
         limits = load_limits(args.config)
         store = Store(args.state)
         engine = Orchestrator(store, limits)
+        if args.command in {'ai-smoke', 'ai-demo'}:
+            from .ai_workflow import run_ai
+            result = run_ai(store, smoke=args.command == 'ai-smoke')
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0 if result['status'] == 'PASS' else 2
         if args.command == 'init':
             result = {'state': str(store.root), 'schema_version': 1}
         elif args.command == 'demo':

@@ -1,0 +1,1 @@
+{"status": "PASS", "real_hermes": true, "model_endpoint": "FAKE_HTTP", "calls": [["/api/show", null], ["/v1/chat/completions", null]], "result": {"ready": true}}

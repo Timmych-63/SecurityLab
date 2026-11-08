@@ -146,3 +146,19 @@ py -3 -m securitylab demo --executor docker
 Ожидаются DONE и `finding_status: FIXED`. Это всё ещё известный учебный пример без AI,
 но все пять проверок запускаются через одноразовые контейнеры, а их записи сверяются
 на хосте. Подробнее: `docs/S3_WORKFLOW.md`. Старый `demo` без параметра остаётся локальным.
+
+## S4 — Hermes + local model
+
+After applying S4, from the project directory on Windows:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Start-S4.ps1
+```
+
+This builds pinned Hermes in a separate Python 3.14 container, downloads Qwen3.5 2B
+(~2.7 GB), starts a private local model, runs ai-smoke then ai-demo. CPU profile;
+allow sufficient Docker VM memory (model limit6 GiB + agent1.5 GiB). No host Python
+upgrade required. S4 live Windows/model acceptance remains pending.
+This is a constrained synthetic exercise: only a proposal with the reviewed fix's
+AST is admitted to the existing S3 checks. See docs/S4_HERMES.md before treating it
+as an arbitrary-project security audit. Dashboard remains planned as the primary UI.

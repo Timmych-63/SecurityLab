@@ -65,3 +65,13 @@ S1 на ПК пользователя уже подтверждён: 16 PASS, b4
 
 `python3 -m unittest discover -s tests -v`: 90 tests, all PASS, 28.809 s.
 Full output: test-s3-output.txt. Docker workflow tests use a mock broker that runs only reviewed fixture constants locally. Live Docker S3: NOT TESTED in this environment. User confirmed S1 (16 PASS) and S2 (5 scenarios, cleanup PASS) on Windows before this update.
+
+## S3 Windows acceptance
+User supplied run d6f559e8291348529e92dc44e55fb3f4: DONE/FIXED,
+scripted-demo-docker-no-ai, attempts=1, error=null. Accepted for synthetic scope.
+
+## S4 implementation
+109 tests PASS (42.112s), full log test-s4-output.txt. AI/Docker transports mocked.
+Actual pinned Hermes Python API exercised against fake HTTP model: PASS,
+hermes-api-probe-output.txt. No real model inference or Docker in development environment.
+Windows S4/live model/build: NOT TESTED pending user output.

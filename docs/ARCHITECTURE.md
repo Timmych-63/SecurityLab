@@ -109,3 +109,13 @@ DockerFixtureRunner проверяет точные fixture bytes и форми�
 Отмена передаётся от SQLite stop к процессу attach и cleanup контейнера.
 Новый режим не меняет schema v1 и не включает автоматический fallback на хост.
 Граница доказательств ограничена известным fixture; не путать с произвольным AI-кодом.
+
+## S4 current implementation (supersedes earlier no-adapter status)
+
+CLI ai-demo → HermesAdapter → disposable Hermes worker → private Ollama.
+Red then Blue, fresh context, no tools; strict JSON and known-fix AST admission.
+After admission, the existing S3 orchestrator verifies the canonical reviewed fix.
+AI summaries retain original proposals and verification_run; S3 child mode remains
+scripted-demo-docker-no-ai. Queue state and Docker control remain host-only.
+No general AI-generated code admission or independent arbitrary-project oracle yet.
+See S4_HERMES.md for limits, pins, failure recovery and acceptance requirements.

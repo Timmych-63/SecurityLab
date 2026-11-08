@@ -1,41 +1,30 @@
-# SecurityLab — этап 3 / S3, 2026-11-08
+# SecurityLab — S4 implementation, 2026-11-08
 
-## Подтверждённая база
-- Windows/Python 3.13.6: 37 PASS, 1 SKIP из 38 после UTF8 fix; учебная находка FIXED.
-- Docker Linux Engine работает, сборка и исходный demo прошли.
-- S1: 16 PASS, b4f21324bcaf419ea62cece28fecb87c.
-- S2 на ПК пользователя: normal, nonzero, timeout, output_limit, boundaries — все PASS;
-  cleanup PASS для всех пяти контейнеров. Повторять эти проверки без новых причин не нужно.
-- Последняя сохранённая база перед S3: commit 3cbbbdfb96fcf6d10a25829bf23e455042fce4ed.
+## Accepted on user's Windows PC
+- Core UTF8 fix: 37 PASS + 1 expected Windows symlink SKIP.
+- S1 isolation configuration: 16 PASS.
+- S2 broker: normal/nonzero/timeout/output_limit/boundaries and all cleanup PASS.
+- S3 full Docker fixture cycle: DONE/FIXED, one attempt, no error;
+  run d6f559e8291348529e92dc44e55fb3f4. Do not repeat S1/S2/S3 without new cause.
 
-## Реализовано S3
-- demo --executor docker, сохранение backend в очереди без смены схемы SQLite.
-- Пять проверок учебного цикла через S2: baseline/regression/build/mandatory/recheck.
-- Привязанные host receipts: run/kind/revision/source/test/payload/image, результаты и cleanup.
-- Повторная проверка записей перед FIXED, запрет fallback на хост, stop через broker.
-- CLI выводит finding_status и путь к отчёту; отчёт включает происхождение доказательств.
-- Прежний локальный demo сохранён; это по-прежнему сценарный пример без AI.
-- Подробности и ограничения: S3_WORKFLOW.md.
+## Current S4
+Hermes adapter, isolated worker, sequential Red/Blue proposals, strict schemas,
+AST-equivalent-to-reviewed-fix gate, child S3 validation, persisted AI summaries.
+New ai-smoke / ai-demo and scripts/Start-S4.ps1. See S4_HERMES.md for exact boundary.
+109 automated tests PASS; real pinned Hermes + fake HTTP model API probe PASS.
+Live Docker image build, Ollama model generation, Windows S4: NOT TESTED.
+Source base: 782916138b34f1e7893b7495ec7e067d3e5d16cb. Final commit in S4_MANIFEST.json.
 
-## Проверка реализации
-90 автоматических тестов PASS (28.809 s); Docker-транспорт подменён в тестах.
-Полный журнал: test-s3-output.txt. Live S3 NOT TESTED.
+## Next action
+User overlays S4 archive and runs Start-S4.ps1. Obtain ai-smoke PASS and ai-demo
+PASS/FIXED or diagnose first error. Do not claim live AI success from mocked tests.
+Model Qwen3.5 2B, CPU initially, context64K, one model/two sequential roles.
+Hermes pinned source e075441241b8d626789b4aae0e376f86eabf824d. No CS AIReviewer.
 
-## Следующее конкретное действие
-На ПК: docker compose build, затем py -3 -m securitylab demo --executor docker.
-Проверить DONE и finding_status FIXED. Live полный S3 пока NOT TESTED.
-После результата — исправить обнаруженные проблемы или зафиксировать PASS и перейти
-к адаптеру Hermes, ограничениям инструментов и реальному запросу локальной модели.
-
-## Дальнейший согласованный порядок
-Реальный AI-цикл → первый разрешённый сервис → Dashboard → многосервисность/стабилизация.
-Dashboard — основной интерфейс общего ядра; CLI минимальный; отчёты сохраняются.
-Две AI-роли Red/Blue, программный валидатор; CS AIReviewer не подключается.
-
-## Ограничения
-Нет реального AI и универсального доказательства для произвольного исходника.
-S3 принимает только побайтно известные учебные исходники/тесты; stdout неизвестной
-программы не считается доказательством. База и записи на хосте доверенные.
-Изоляция и временные лимиты не сертифицируют защиту от всех container escapes.
-Автоматическая очистка после аварийного убийства broker ещё не реализована.
-Git-история сохранена; точный commit обновления указан в S3_MANIFEST.json.
+## Product plan and limitations
+First constrained AI exercise → independent arbitrary-patch behavior checks on an
+approved real project → Dashboard → multi-service support and stabilization.
+Dashboard is the main UI; minimal CLI and HTML/JSON reports remain.
+No arbitrary-project scan, cloud fallback, automatic merge or model-declared FIXED.
+No hard-kill orphan reaper or resumable AI queue yet. Current AI workflow canonicalizes
+only the reviewed AST; it is not a general autonomous security audit.

@@ -30,3 +30,9 @@ Dashboard согласован, реализация NOT TESTED / ещё не н
 S2: код broker/worker и contract-тесты готовы; живые пять Docker-сценариев PASS по выводу пользователя, cleanup PASS для всех.
 
 S3: соединение очереди с S2 и проверка receipts реализованы. Live полный Docker-цикл NOT TESTED.
+
+## S3 accepted / S4 pending — 2026-11-08
+S3 full Windows Docker fixture PASS: d6f559e8291348529e92dc44e55fb3f4 DONE/FIXED.
+This supersedes the earlier S3 NOT TESTED marker.
+S4 real Hermes API/fake HTTP model PASS; 109 tests PASS.
+S4 Docker build + real model + Windows integration NOT TESTED.

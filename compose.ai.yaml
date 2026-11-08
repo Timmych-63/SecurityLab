@@ -1,0 +1,45 @@
+name: securitylab-ai
+services:
+  hermes:
+    image: securitylab-hermes:s4
+    build:
+      context: .
+      dockerfile: docker/Hermes.Dockerfile
+    profiles: [build]
+    network_mode: none
+    read_only: true
+    user: '10001:10001'
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: [/tmp]
+  model:
+    image: ollama/ollama:0.40.15
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_NUM_PARALLEL: '1'
+      OLLAMA_MAX_LOADED_MODELS: '1'
+      OLLAMA_CONTEXT_LENGTH: '64000'
+    networks: [private]
+    volumes: [models:/root/.ollama]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 6g
+    cpus: 2
+    read_only: true
+    tmpfs: [/tmp]
+  model-pull:
+    image: ollama/ollama:0.40.15
+    profiles: [setup]
+    volumes: [models:/root/.ollama]
+    entrypoint: [/bin/sh, -c]
+    command:
+      - 'ollama serve & pid=$$!; trap "kill $$pid" EXIT; i=0; until ollama list >/dev/null 2>&1; do i=$$((i+1)); [ $$i -lt 30 ] || exit 1; sleep 1; done; ollama pull qwen3.5:2b'
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+networks:
+  private:
+    name: securitylab-ai-private
+    internal: true
+volumes:
+  models:

@@ -40,3 +40,11 @@
 - Прокидывание stop, запрет fallback, сохранение режима при восстановлении.
 - Вывод finding_status и пути к отчёту в demo CLI.
 - Живой S3-прогон ожидается; AI и произвольные проекты пока не допускаются.
+
+## S4 — constrained Hermes integration
+- Accepted user's S3 DONE/FIXED run.
+- Added pinned Hermes worker and CPU Ollama Compose setup; private runtime network.
+- Added strict Red/Blue proposals, AST admission and separate child S3 verification.
+- Added ai-smoke/ai-demo, bounded transport, cleanup and immutable image identification.
+- Added Windows setup script and 19 tests (109 total).
+- Verified actual Hermes API with a fake model endpoint; live inference not yet verified.
