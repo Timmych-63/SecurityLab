@@ -43,6 +43,6 @@ class FixtureRunner:
     def build(self, repo, revision, stop=lambda: False):
         path = self.check_source(repo, FIXED)
         result = execute([sys.executable, '-I', '-B', '-c',
-                          'import pathlib,sys; compile(pathlib.Path(sys.argv[1]).read_text(),"service.py","exec")',
+                          'import pathlib,sys; compile(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"),"service.py","exec")',
                           str(path)], repo, self.limits, stop)
         return dict(result=result.data(), revision=revision, source_hash=digest(FIXED))

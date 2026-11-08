@@ -114,7 +114,7 @@ class WorkflowTests(TempTest):
         rid = self.store.create()
         self.engine.initialise_fixture(self.engine.repo(rid))
         marker = self.root / 'owned'
-        (self.engine.repo(rid) / 'service.py').write_text('open(' + repr(str(marker)) + ',"w").write("oops")')
+        (self.engine.repo(rid) / 'service.py').write_text('open(' + repr(str(marker)) + ',"w").write("oops")', encoding='utf-8')
         with self.assertRaises(PolicyError):
             self.engine.runner.suite(self.engine.repo(rid), 'fake', False)
         self.assertFalse(marker.exists())
@@ -130,9 +130,9 @@ class WorkflowTests(TempTest):
     def test_events_export_recreated(self):
         rid = self.complete()
         output = self.root / 'events.jsonl'
-        output.write_text('broken')
+        output.write_text('broken', encoding='utf-8')
         self.store.export_events(rid, output)
-        self.assertEqual([json.loads(x) for x in output.read_text().splitlines()], self.store.history(rid))
+        self.assertEqual([json.loads(x) for x in output.read_text(encoding='utf-8').splitlines()], self.store.history(rid))
 
 class ValidatorTests(TempTest):
     def setUp(self):
@@ -215,15 +215,15 @@ class ProcessTests(TempTest):
 class ReportCliTests(TempTest):
     def test_html_escapes_findings_and_json_has_proofs(self):
         rid = self.complete()
-        f = self.store.finding(rid); f['title'] = '<script>alert(1)</script>'
+        f = self.store.finding(rid); f['title'] = '<script>alert(1)</script> Кириллица 😀'
         with self.store.db:
             self.store.db.execute('UPDATE findings SET body=? WHERE run_id=?', (json.dumps(f), rid))
         path = report(self.store, rid, self.root / 'report')
-        text = path.read_text()
+        text = path.read_text(encoding='utf-8')
         self.assertNotIn('<script>', text)
         self.assertIn('&lt;script&gt;', text)
         self.assertIn('Content-Security-Policy', text)
-        self.assertEqual(json.loads(path.with_suffix('.json').read_text())['evidence']['verdict']['status'], 'FIXED')
+        self.assertEqual(json.loads(path.with_suffix('.json').read_text(encoding='utf-8'))['evidence']['verdict']['status'], 'FIXED')
     def test_cli_end_to_end(self):
         args = ['--state', str(self.root / 'cli')]
         with contextlib.redirect_stdout(io.StringIO()) as out:
@@ -242,12 +242,12 @@ if __name__ == '__main__': unittest.main()
 class ConfigurationTests(TempTest):
     def test_valid_configuration(self):
         from securitylab.config import load_limits
-        p = self.root / 'config.toml'; p.write_text('[limits]\ntimeout=5\nmax_attempts=2\n')
+        p = self.root / 'config.toml'; p.write_text('[limits]\ntimeout=5\nmax_attempts=2\n', encoding='utf-8')
         self.assertEqual(load_limits(p).timeout, 5)
     def test_unknown_and_boolean_values_rejected(self):
         from securitylab.config import load_limits
         for text in ('[limits]\ncommand="sh"', '[limits]\ntimeout=true', '[network]\nallow=true'):
-            p = self.root / 'config.toml'; p.write_text(text)
+            p = self.root / 'config.toml'; p.write_text(text, encoding='utf-8')
             with self.assertRaises(PolicyError): load_limits(p)
 
 class RecoveryRollbackTests(TempTest):
@@ -275,12 +275,23 @@ Orchestrator(s).run(sys.argv[2], after_stage=crash)
         self.assertEqual(result['status'], 'ROLLED_BACK')
         self.assertEqual(self.store.finding(rid)['status'], 'REOPENED_AFTER_ROLLBACK')
         self.assertEqual(git.call('rev-parse', 'main'), main)
-        self.assertEqual((self.engine.repo(rid) / 'service.py').read_text(), VULNERABLE)
+        self.assertEqual((self.engine.repo(rid) / 'service.py').read_text(encoding='utf-8'), VULNERABLE)
         self.assertEqual(git.call('diff', 'main', 'HEAD', '--'), '')
         head = git.head(); self.engine.rollback(rid); self.assertEqual(git.head(), head)
 
     def test_rollback_refuses_unknown_changes(self):
         rid = self.complete()
-        (self.engine.repo(rid) / 'user.txt').write_text('preserve me')
+        (self.engine.repo(rid) / 'user.txt').write_text('preserve me', encoding='utf-8')
         with self.assertRaises(PolicyError): self.engine.rollback(rid)
-        self.assertEqual((self.engine.repo(rid) / 'user.txt').read_text(), 'preserve me')
+        self.assertEqual((self.engine.repo(rid) / 'user.txt').read_text(encoding='utf-8'), 'preserve me')
+
+
+class WindowsEncodingTests(TempTest):
+    # Only run the focused inherited HTML scenario under a simulated CP1251 default.
+    def test_report_with_cp1251_default(self):
+        from unittest.mock import patch
+        original = Path.read_text
+        def windows_read(path, encoding=None, errors=None):
+            return original(path, encoding=encoding or 'cp1251', errors=errors)
+        with patch.object(Path, 'read_text', windows_read):
+            ReportCliTests.test_html_escapes_findings_and_json_has_proofs(self)

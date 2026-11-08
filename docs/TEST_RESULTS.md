@@ -30,3 +30,14 @@
 контейнерной изоляции, Windows, GPU, или внешних проектов.
 Шаблоны Compose проверены чтением; `docker compose config/build/run` не выполнены.
 Визуальная проверка HTML в браузере не выполнена; проверены генерация и escaping.
+
+## UTF8 hotfix — 2026-11-08
+
+По присланному Windows-выводу: 35 PASS, 1 ERROR, 1 SKIP из 37.
+ERROR: тест отчёта использовал Path.read_text() без encoding; Windows выбрал CP1251.
+Сам отчёт сохранялся корректно как UTF-8. Исправлено явное encoding='utf-8'.
+Аналогичные чтения/записи тестов и compile-проверка приведены к UTF-8.
+Новый регрессионный сценарий содержит кириллицу/emoji и имитирует CP1251 default.
+Повторный Linux-прогон: 38 PASS, 0 FAIL, 0 SKIP, 16.625 s.
+Полный вывод: docs/test-utf8-output.txt. Windows-повтор после патча ещё NOT TESTED.
+Docker: по выводу пользователя клиент/Compose установлены; Linux daemon недоступен.
