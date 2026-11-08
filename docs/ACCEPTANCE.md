@@ -17,8 +17,12 @@ PASS относится только к явно указанной област
 | Red самостоятельно исследует проект | BLOCKED | Нет AI и защищённого broker |
 | Blue автоматически создаёт реальный patch | BLOCKED | Нет AI/broker; scripted patch не засчитывается |
 | Изоляция произвольного кода и egress | NOT TESTED | Полноценный runner/broker не реализован |
-| Docker Compose build/run/health | BLOCKED | Docker недоступен |
-| Windows / CUDA / GPU | NOT TESTED | Нет доступа к целевому ПК |
+| Docker Compose config/build/demo | PASS | По присланному выводу ПК пользователя; runtime health не проверен |
+| Windows core | PASS | По выводу: 37 PASS, 1 SKIP; тест symlink не выполнен |
+| CUDA / GPU | NOT TESTED | Проверки ещё не выполнены |
 | Перенос на реальный многосервисный проект | NOT TESTED | Проект не приложен, scan закрыт |
 | CPU/RAM/PID ограничения контейнеров | NOT TESTED | Конфигурации подготовлены без запуска |
 | Финальный релиз | BLOCKED | Обязательные критерии AI/изоляции не выполнены |
+
+S1: 16 проверок конфигурации реализованы, запуск в Docker пользователя NOT TESTED.
+Dashboard согласован, реализация NOT TESTED / ещё не начата.

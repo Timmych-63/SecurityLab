@@ -1,0 +1,50 @@
+test_expected_configuration (test_sandbox_check.SandboxChecks.test_expected_configuration) ... ok
+test_larger_limits_fail (test_sandbox_check.SandboxChecks.test_larger_limits_fail) ... ok
+test_malformed_limits_fail (test_sandbox_check.SandboxChecks.test_malformed_limits_fail) ... ok
+test_missing_observation_is_blocked (test_sandbox_check.SandboxChecks.test_missing_observation_is_blocked) ... ok
+test_mount_parser_matches_exact_mount (test_sandbox_check.SandboxChecks.test_mount_parser_matches_exact_mount) ... ok
+test_timeout_not_proof_of_isolation (test_sandbox_check.SandboxChecks.test_timeout_not_proof_of_isolation) ... ok
+test_unsafe_observations_fail (test_sandbox_check.SandboxChecks.test_unsafe_observations_fail) ... ok
+test_unknown_and_boolean_values_rejected (test_securitylab.ConfigurationTests.test_unknown_and_boolean_values_rejected) ... ok
+test_valid_configuration (test_securitylab.ConfigurationTests.test_valid_configuration) ... ok
+test_invalid_limits (test_securitylab.PolicyTests.test_invalid_limits) ... ok
+test_path_traversal_and_git_paths_denied (test_securitylab.PolicyTests.test_path_traversal_and_git_paths_denied) ... ok
+test_roles_cannot_close_execute_or_merge (test_securitylab.PolicyTests.test_roles_cannot_close_execute_or_merge) ... ok
+test_symlink_escape_denied (test_securitylab.PolicyTests.test_symlink_escape_denied) ... ok
+test_unknown_id_rejected (test_securitylab.PolicyTests.test_unknown_id_rejected) ... ok
+test_cancel (test_securitylab.ProcessTests.test_cancel) ... ok
+test_output_bounded (test_securitylab.ProcessTests.test_output_bounded) ... ok
+test_stderr_and_nonzero (test_securitylab.ProcessTests.test_stderr_and_nonzero) ... ok
+test_timeout (test_securitylab.ProcessTests.test_timeout) ... ok
+test_actual_process_death_releases_lock_and_resumes (test_securitylab.RecoveryRollbackTests.test_actual_process_death_releases_lock_and_resumes) ... ok
+test_rollback_preserves_main_and_is_idempotent (test_securitylab.RecoveryRollbackTests.test_rollback_preserves_main_and_is_idempotent) ... ok
+test_rollback_refuses_unknown_changes (test_securitylab.RecoveryRollbackTests.test_rollback_refuses_unknown_changes) ... ok
+test_cli_end_to_end (test_securitylab.ReportCliTests.test_cli_end_to_end) ... ok
+test_html_escapes_findings_and_json_has_proofs (test_securitylab.ReportCliTests.test_html_escapes_findings_and_json_has_proofs) ... ok
+test_scan_fails_closed_without_touching_project (test_securitylab.ReportCliTests.test_scan_fails_closed_without_touching_project) ... ok
+test_baseline_crash_not_vulnerability (test_securitylab.ValidatorTests.test_baseline_crash_not_vulnerability) ... ok
+test_changed_main_rejected (test_securitylab.ValidatorTests.test_changed_main_rejected) ... ok
+test_changed_test_rejected (test_securitylab.ValidatorTests.test_changed_test_rejected) ... ok
+test_dirty_worktree_rejected (test_securitylab.ValidatorTests.test_dirty_worktree_rejected) ... ok
+test_every_required_proof_is_required (test_securitylab.ValidatorTests.test_every_required_proof_is_required) ... ok
+test_false_success_zero_exit_not_enough (test_securitylab.ValidatorTests.test_false_success_zero_exit_not_enough) ... ok
+test_nonboolean_checks_rejected (test_securitylab.ValidatorTests.test_nonboolean_checks_rejected) ... ok
+test_rejects_model_claim_without_evidence (test_securitylab.ValidatorTests.test_rejects_model_claim_without_evidence) ... ok
+test_stale_commit_rejected (test_securitylab.ValidatorTests.test_stale_commit_rejected) ... ok
+test_timed_out_truncated_cancelled_rejected (test_securitylab.ValidatorTests.test_timed_out_truncated_cancelled_rejected) ... ok
+test_report_with_cp1251_default (test_securitylab.WindowsEncodingTests.test_report_with_cp1251_default) ... ok
+test_complete_proven_fix_and_main_untouched (test_securitylab.WorkflowTests.test_complete_proven_fix_and_main_untouched) ... ok
+test_events_export_recreated (test_securitylab.WorkflowTests.test_events_export_recreated) ... ok
+test_host_modified_code_denied (test_securitylab.WorkflowTests.test_host_modified_code_denied) ... ok
+test_illegal_transition_rollback (test_securitylab.WorkflowTests.test_illegal_transition_rollback) ... ok
+test_recover_partial_git_patch_before_state_commit (test_securitylab.WorkflowTests.test_recover_partial_git_patch_before_state_commit) ... ok
+test_reopen_database_and_idempotent_done (test_securitylab.WorkflowTests.test_reopen_database_and_idempotent_done) ... ok
+test_resume_after_each_stage (test_securitylab.WorkflowTests.test_resume_after_each_stage) ... ok
+test_retry_limit (test_securitylab.WorkflowTests.test_retry_limit) ... ok
+test_stop_and_retry (test_securitylab.WorkflowTests.test_stop_and_retry) ... ok
+test_worker_lock_excludes_second_process (test_securitylab.WorkflowTests.test_worker_lock_excludes_second_process) ... ok
+
+----------------------------------------------------------------------
+Ran 45 tests in 16.666s
+
+OK
