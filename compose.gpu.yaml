@@ -1,0 +1,10 @@
+# Apply with compose.model.yaml only. CUDA/GPU NOT TESTED.
+services:
+  model:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

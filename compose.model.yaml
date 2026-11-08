@@ -1,0 +1,27 @@
+# Optional separate runtime preparation, not yet connected to the workflow.
+# Supply a reviewed Ollama image tag/digest in .env; preload model volume separately.
+services:
+  model:
+    image: ${SECURITYLAB_MODEL_IMAGE:?Set a reviewed Ollama image reference}
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_CONTEXT_LENGTH: "4096"
+    networks: [model_internal]
+    volumes: ["models:/root/.ollama"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 128
+    mem_limit: 6g
+    cpus: 4.0
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+networks:
+  model_internal:
+    internal: true
+volumes:
+  models:

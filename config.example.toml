@@ -1,0 +1,6 @@
+[limits]
+timeout = 20
+max_attempts = 3
+output_bytes = 65536
+max_context_chars = 24000
+max_reply_chars = 16000

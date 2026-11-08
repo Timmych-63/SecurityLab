@@ -1,0 +1,20 @@
+# M1/M2 demo only; NOT the final multi-service AI deployment.
+services:
+  demo:
+    build: .
+    command: ["--state", "/data", "demo"]
+    network_mode: none
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 64
+    mem_limit: 512m
+    cpus: 1.0
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid,nodev
+    volumes:
+      - state:/data
+    # The demo is a finite job; a long-running service healthcheck is inappropriate.
+volumes:
+  state:

@@ -1,0 +1,226 @@
+<!doctype html><html lang="ru"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>SecurityLab — отчёт учебного прогона</title>
+<style>body{max-width:1050px;margin:40px auto;padding:0 24px;font:16px/1.6 system-ui;color:#17202b;background:#fafaf7}h1{line-height:1.2}table{border-collapse:collapse;width:100%}td{padding:8px;border-bottom:1px solid #ccd2d8;vertical-align:top}td:first-child{width:210px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#edf0f1;padding:16px;font-size:13px}summary{cursor:pointer;font-weight:600;margin-top:20px}.notice{border-left:4px solid #b75e13;padding:12px;background:#fff3dc}</style>
+<h1>SecurityLab</h1><p class="notice">Учебный прогон без AI. Результат относится только к синтетическому сервису, а не к безопасности вашего проекта.</p><p>Прогон: 9c24d7a8e8d1479f920a2b147a1b6d72 · DONE</p><h2>Находки: 1</h2><table><tr><td>id</td><td>DEMO-ACCESS-001</td></tr><tr><td>title</td><td>Cross-user record access</td></tr><tr><td>service</td><td>synthetic-records</td></tr><tr><td>file</td><td>service.py</td></tr><tr><td>line</td><td>4</td></tr><tr><td>description</td><td>Authenticated user can read another owner record</td></tr><tr><td>cause</td><td>Missing ownership check</td></tr><tr><td>severity</td><td>HIGH</td></tr><tr><td>reproduction</td><td>alice reads record two owned by bob</td></tr><tr><td>expected</td><td>[403, None]</td></tr><tr><td>actual</td><td>[200, &#x27;synthetic-B&#x27;]</td></tr><tr><td>recommendation</td><td>Check owner before returning value</td></tr><tr><td>status</td><td>FIXED</td></tr><tr><td>mode</td><td>scripted-demo-no-ai</td></tr></table><h2>Доказательства и исправление</h2><details open><summary>baseline</summary><pre>{
+  &quot;result&quot;: {
+    &quot;command&quot;: [
+      &quot;/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3&quot;,
+      &quot;-I&quot;,
+      &quot;-B&quot;,
+      &quot;-c&quot;,
+      &quot;import importlib.util, json, pathlib, sys\np = pathlib.Path(sys.argv[1])\nspec = importlib.util.spec_from_file_location(\&quot;fixture_service\&quot;, p)\nm = importlib.util.module_from_spec(spec)\nspec.loader.exec_module(m)\nchecks = {\n \&quot;owner_read\&quot;: m.read_record(\&quot;alice\&quot;, \&quot;one\&quot;) == (200, \&quot;synthetic-A\&quot;),\n \&quot;other_owner_read\&quot;: m.read_record(\&quot;bob\&quot;, \&quot;two\&quot;) == (200, \&quot;synthetic-B\&quot;),\n \&quot;anonymous_rejected\&quot;: m.read_record(None, \&quot;one\&quot;) == (401, None),\n \&quot;missing_record\&quot;: m.read_record(\&quot;alice\&quot;, \&quot;missing\&quot;) == (404, None),\n \&quot;cross_user_denied\&quot;: m.read_record(\&quot;alice\&quot;, \&quot;two\&quot;) == (403, None),\n \&quot;reverse_cross_user_denied\&quot;: m.read_record(\&quot;bob\&quot;, \&quot;one\&quot;) == (403, None),\n \&quot;unknown_user_denied\&quot;: m.read_record(\&quot;mallory\&quot;, \&quot;one\&quot;) == (403, None),\n}\nprint(json.dumps({\&quot;checks\&quot;: checks, \&quot;observed\&quot;: list(m.read_record(\&quot;alice\&quot;, \&quot;two\&quot;))}))\nsys.exit(0 if all(checks.values()) else 1)\n&quot;,
+      &quot;/workspace/scratch/8979e37299df/securitylab/.securitylab/runs/9c24d7a8e8d1479f920a2b147a1b6d72/repo/service.py&quot;
+    ],
+    &quot;returncode&quot;: 1,
+    &quot;stdout&quot;: &quot;{\&quot;checks\&quot;: {\&quot;owner_read\&quot;: true, \&quot;other_owner_read\&quot;: true, \&quot;anonymous_rejected\&quot;: true, \&quot;missing_record\&quot;: true, \&quot;cross_user_denied\&quot;: false, \&quot;reverse_cross_user_denied\&quot;: false, \&quot;unknown_user_denied\&quot;: false}, \&quot;observed\&quot;: [200, \&quot;synthetic-B\&quot;]}\n&quot;,
+    &quot;stderr&quot;: &quot;&quot;,
+    &quot;timed_out&quot;: false,
+    &quot;cancelled&quot;: false,
+    &quot;truncated&quot;: false,
+    &quot;duration&quot;: 0.0206
+  },
+  &quot;revision&quot;: &quot;4859869f7e94a0492c8610b8a744c4d4be0533b2&quot;,
+  &quot;source_hash&quot;: &quot;61fb6a247dd6f7a7b996ca1314a869c3b3c720a5d699e9e9b763d510ff4d8f4e&quot;,
+  &quot;test_hash&quot;: &quot;084c923f52012a77eb0e39ef06659ecc0c99082748ce8606b4c7ce7372f35402&quot;,
+  &quot;checks&quot;: {
+    &quot;owner_read&quot;: true,
+    &quot;other_owner_read&quot;: true,
+    &quot;anonymous_rejected&quot;: true,
+    &quot;missing_record&quot;: true,
+    &quot;cross_user_denied&quot;: false,
+    &quot;reverse_cross_user_denied&quot;: false,
+    &quot;unknown_user_denied&quot;: false
+  },
+  &quot;observed&quot;: [
+    200,
+    &quot;synthetic-B&quot;
+  ]
+}</pre></details><details open><summary>build</summary><pre>{
+  &quot;result&quot;: {
+    &quot;command&quot;: [
+      &quot;/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3&quot;,
+      &quot;-I&quot;,
+      &quot;-B&quot;,
+      &quot;-c&quot;,
+      &quot;import pathlib,sys; compile(pathlib.Path(sys.argv[1]).read_text(),\&quot;service.py\&quot;,\&quot;exec\&quot;)&quot;,
+      &quot;/workspace/scratch/8979e37299df/securitylab/.securitylab/runs/9c24d7a8e8d1479f920a2b147a1b6d72/repo/service.py&quot;
+    ],
+    &quot;returncode&quot;: 0,
+    &quot;stdout&quot;: &quot;&quot;,
+    &quot;stderr&quot;: &quot;&quot;,
+    &quot;timed_out&quot;: false,
+    &quot;cancelled&quot;: false,
+    &quot;truncated&quot;: false,
+    &quot;duration&quot;: 0.0207
+  },
+  &quot;revision&quot;: &quot;3b1acb8d68cd1bf2263bc311d8ab2e35790fc95b&quot;,
+  &quot;source_hash&quot;: &quot;1516dea9f5d379201bc5f10dc31e673d835ac1298c1f0f7231f0049af229822e&quot;
+}</pre></details><details open><summary>mandatory</summary><pre>{
+  &quot;result&quot;: {
+    &quot;command&quot;: [
+      &quot;/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3&quot;,
+      &quot;-I&quot;,
+      &quot;-B&quot;,
+      &quot;-c&quot;,
+      &quot;import importlib.util, json, pathlib, sys\np = pathlib.Path(sys.argv[1])\nspec = importlib.util.spec_from_file_location(\&quot;fixture_service\&quot;, p)\nm = importlib.util.module_from_spec(spec)\nspec.loader.exec_module(m)\nchecks = {\n \&quot;owner_read\&quot;: m.read_record(\&quot;alice\&quot;, \&quot;one\&quot;) == (200, \&quot;synthetic-A\&quot;),\n \&quot;other_owner_read\&quot;: m.read_record(\&quot;bob\&quot;, \&quot;two\&quot;) == (200, \&quot;synthetic-B\&quot;),\n \&quot;anonymous_rejected\&quot;: m.read_record(None, \&quot;one\&quot;) == (401, None),\n \&quot;missing_record\&quot;: m.read_record(\&quot;alice\&quot;, \&quot;missing\&quot;) == (404, None),\n \&quot;cross_user_denied\&quot;: m.read_record(\&quot;alice\&quot;, \&quot;two\&quot;) == (403, None),\n \&quot;reverse_cross_user_denied\&quot;: m.read_record(\&quot;bob\&quot;, \&quot;one\&quot;) == (403, None),\n \&quot;unknown_user_denied\&quot;: m.read_record(\&quot;mallory\&quot;, \&quot;one\&quot;) == (403, None),\n}\nprint(json.dumps({\&quot;checks\&quot;: checks, \&quot;observed\&quot;: list(m.read_record(\&quot;alice\&quot;, \&quot;two\&quot;))}))\nsys.exit(0 if all(checks.values()) else 1)\n&quot;,
+      &quot;/workspace/scratch/8979e37299df/securitylab/.securitylab/runs/9c24d7a8e8d1479f920a2b147a1b6d72/repo/service.py&quot;
+    ],
+    &quot;returncode&quot;: 0,
+    &quot;stdout&quot;: &quot;{\&quot;checks\&quot;: {\&quot;owner_read\&quot;: true, \&quot;other_owner_read\&quot;: true, \&quot;anonymous_rejected\&quot;: true, \&quot;missing_record\&quot;: true, \&quot;cross_user_denied\&quot;: true, \&quot;reverse_cross_user_denied\&quot;: true, \&quot;unknown_user_denied\&quot;: true}, \&quot;observed\&quot;: [403, null]}\n&quot;,
+    &quot;stderr&quot;: &quot;&quot;,
+    &quot;timed_out&quot;: false,
+    &quot;cancelled&quot;: false,
+    &quot;truncated&quot;: false,
+    &quot;duration&quot;: 0.0207
+  },
+  &quot;revision&quot;: &quot;3b1acb8d68cd1bf2263bc311d8ab2e35790fc95b&quot;,
+  &quot;source_hash&quot;: &quot;1516dea9f5d379201bc5f10dc31e673d835ac1298c1f0f7231f0049af229822e&quot;,
+  &quot;test_hash&quot;: &quot;084c923f52012a77eb0e39ef06659ecc0c99082748ce8606b4c7ce7372f35402&quot;,
+  &quot;checks&quot;: {
+    &quot;owner_read&quot;: true,
+    &quot;other_owner_read&quot;: true,
+    &quot;anonymous_rejected&quot;: true,
+    &quot;missing_record&quot;: true,
+    &quot;cross_user_denied&quot;: true,
+    &quot;reverse_cross_user_denied&quot;: true,
+    &quot;unknown_user_denied&quot;: true
+  },
+  &quot;observed&quot;: [
+    403,
+    null
+  ]
+}</pre></details><details open><summary>patch</summary><pre>{
+  &quot;revision&quot;: &quot;3b1acb8d68cd1bf2263bc311d8ab2e35790fc95b&quot;,
+  &quot;branch&quot;: &quot;securitylab/9c24d7a8e8d1&quot;,
+  &quot;diff&quot;: &quot;diff --git a/service.py b/service.py\nindex a6f1502..1b6fe20 100644\n--- a/service.py\n+++ b/service.py\n@@ -7,4 +7,6 @@ def read_record(user, record_id):\n     record = RECORDS.get(record_id)\n     if record is None:\n         return 404, None\n+    if record[\&quot;owner\&quot;] != user:\n+        return 403, None\n     return 200, record[\&quot;value\&quot;]\ndiff --git a/test_regression.py b/test_regression.py\nnew file mode 100644\nindex 0000000..9ecea9e\n--- /dev/null\n+++ b/test_regression.py\n@@ -0,0 +1,9 @@\n+import unittest\n+from service import read_record\n+class AccessTest(unittest.TestCase):\n+    def test_other_owner_denied(self):\n+        self.assertEqual(read_record(\&quot;alice\&quot;, \&quot;two\&quot;), (403, None))\n+    def test_owner_allowed(self):\n+        self.assertEqual(read_record(\&quot;bob\&quot;, \&quot;two\&quot;), (200, \&quot;synthetic-B\&quot;))\n+if __name__ == \&quot;__main__\&quot;:\n+    unittest.main()&quot;
+}</pre></details><details open><summary>recheck</summary><pre>{
+  &quot;result&quot;: {
+    &quot;command&quot;: [
+      &quot;/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3&quot;,
+      &quot;-I&quot;,
+      &quot;-B&quot;,
+      &quot;-c&quot;,
+      &quot;import importlib.util, json, pathlib, sys\np = pathlib.Path(sys.argv[1])\nspec = importlib.util.spec_from_file_location(\&quot;fixture_service\&quot;, p)\nm = importlib.util.module_from_spec(spec)\nspec.loader.exec_module(m)\nchecks = {\n \&quot;owner_read\&quot;: m.read_record(\&quot;alice\&quot;, \&quot;one\&quot;) == (200, \&quot;synthetic-A\&quot;),\n \&quot;other_owner_read\&quot;: m.read_record(\&quot;bob\&quot;, \&quot;two\&quot;) == (200, \&quot;synthetic-B\&quot;),\n \&quot;anonymous_rejected\&quot;: m.read_record(None, \&quot;one\&quot;) == (401, None),\n \&quot;missing_record\&quot;: m.read_record(\&quot;alice\&quot;, \&quot;missing\&quot;) == (404, None),\n \&quot;cross_user_denied\&quot;: m.read_record(\&quot;alice\&quot;, \&quot;two\&quot;) == (403, None),\n \&quot;reverse_cross_user_denied\&quot;: m.read_record(\&quot;bob\&quot;, \&quot;one\&quot;) == (403, None),\n \&quot;unknown_user_denied\&quot;: m.read_record(\&quot;mallory\&quot;, \&quot;one\&quot;) == (403, None),\n}\nprint(json.dumps({\&quot;checks\&quot;: checks, \&quot;observed\&quot;: list(m.read_record(\&quot;alice\&quot;, \&quot;two\&quot;))}))\nsys.exit(0 if all(checks.values()) else 1)\n&quot;,
+      &quot;/workspace/scratch/8979e37299df/securitylab/.securitylab/runs/9c24d7a8e8d1479f920a2b147a1b6d72/repo/service.py&quot;
+    ],
+    &quot;returncode&quot;: 0,
+    &quot;stdout&quot;: &quot;{\&quot;checks\&quot;: {\&quot;owner_read\&quot;: true, \&quot;other_owner_read\&quot;: true, \&quot;anonymous_rejected\&quot;: true, \&quot;missing_record\&quot;: true, \&quot;cross_user_denied\&quot;: true, \&quot;reverse_cross_user_denied\&quot;: true, \&quot;unknown_user_denied\&quot;: true}, \&quot;observed\&quot;: [403, null]}\n&quot;,
+    &quot;stderr&quot;: &quot;&quot;,
+    &quot;timed_out&quot;: false,
+    &quot;cancelled&quot;: false,
+    &quot;truncated&quot;: false,
+    &quot;duration&quot;: 0.0206
+  },
+  &quot;revision&quot;: &quot;3b1acb8d68cd1bf2263bc311d8ab2e35790fc95b&quot;,
+  &quot;source_hash&quot;: &quot;1516dea9f5d379201bc5f10dc31e673d835ac1298c1f0f7231f0049af229822e&quot;,
+  &quot;test_hash&quot;: &quot;084c923f52012a77eb0e39ef06659ecc0c99082748ce8606b4c7ce7372f35402&quot;,
+  &quot;checks&quot;: {
+    &quot;owner_read&quot;: true,
+    &quot;other_owner_read&quot;: true,
+    &quot;anonymous_rejected&quot;: true,
+    &quot;missing_record&quot;: true,
+    &quot;cross_user_denied&quot;: true,
+    &quot;reverse_cross_user_denied&quot;: true,
+    &quot;unknown_user_denied&quot;: true
+  },
+  &quot;observed&quot;: [
+    403,
+    null
+  ]
+}</pre></details><details open><summary>regression</summary><pre>{
+  &quot;result&quot;: {
+    &quot;command&quot;: [
+      &quot;/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3&quot;,
+      &quot;-I&quot;,
+      &quot;-B&quot;,
+      &quot;-c&quot;,
+      &quot;import sys; sys.path.insert(0, sys.argv[1]); import unittest; suite=unittest.defaultTestLoader.loadTestsFromName(\&quot;test_regression\&quot;); result=unittest.TextTestRunner().run(suite); sys.exit(0 if result.wasSuccessful() and result.testsRun==2 else 1)&quot;,
+      &quot;/workspace/scratch/8979e37299df/securitylab/.securitylab/runs/9c24d7a8e8d1479f920a2b147a1b6d72/repo&quot;
+    ],
+    &quot;returncode&quot;: 0,
+    &quot;stdout&quot;: &quot;&quot;,
+    &quot;stderr&quot;: &quot;..\n----------------------------------------------------------------------\nRan 2 tests in 0.000s\n\nOK\n&quot;,
+    &quot;timed_out&quot;: false,
+    &quot;cancelled&quot;: false,
+    &quot;truncated&quot;: false,
+    &quot;duration&quot;: 0.0609
+  },
+  &quot;revision&quot;: &quot;3b1acb8d68cd1bf2263bc311d8ab2e35790fc95b&quot;,
+  &quot;source_hash&quot;: &quot;1516dea9f5d379201bc5f10dc31e673d835ac1298c1f0f7231f0049af229822e&quot;,
+  &quot;test_hash&quot;: &quot;48ed3634ea62dcb5546199b4ff443bb3a215988bb813e9ed4dc10c185d53669f&quot;
+}</pre></details><details open><summary>verdict</summary><pre>{
+  &quot;status&quot;: &quot;FIXED&quot;,
+  &quot;reasons&quot;: [],
+  &quot;scope&quot;: &quot;synthetic fixture only; scripted roles, no AI&quot;
+}</pre></details><h2>История</h2><pre>[
+  {
+    &quot;id&quot;: 8,
+    &quot;run_id&quot;: &quot;9c24d7a8e8d1479f920a2b147a1b6d72&quot;,
+    &quot;time&quot;: 1794127623.4992363,
+    &quot;type&quot;: &quot;created&quot;,
+    &quot;body&quot;: {
+      &quot;mode&quot;: &quot;scripted-demo-no-ai&quot;
+    }
+  },
+  {
+    &quot;id&quot;: 9,
+    &quot;run_id&quot;: &quot;9c24d7a8e8d1479f920a2b147a1b6d72&quot;,
+    &quot;time&quot;: 1794127623.4994378,
+    &quot;type&quot;: &quot;started&quot;,
+    &quot;body&quot;: {
+      &quot;attempt&quot;: 1
+    }
+  },
+  {
+    &quot;id&quot;: 10,
+    &quot;run_id&quot;: &quot;9c24d7a8e8d1479f920a2b147a1b6d72&quot;,
+    &quot;time&quot;: 1794127623.645807,
+    &quot;type&quot;: &quot;transition&quot;,
+    &quot;body&quot;: {
+      &quot;from&quot;: &quot;QUEUED&quot;,
+      &quot;to&quot;: &quot;DISCOVERED&quot;
+    }
+  },
+  {
+    &quot;id&quot;: 11,
+    &quot;run_id&quot;: &quot;9c24d7a8e8d1479f920a2b147a1b6d72&quot;,
+    &quot;time&quot;: 1794127623.6879785,
+    &quot;type&quot;: &quot;transition&quot;,
+    &quot;body&quot;: {
+      &quot;from&quot;: &quot;DISCOVERED&quot;,
+      &quot;to&quot;: &quot;CONFIRMED&quot;
+    }
+  },
+  {
+    &quot;id&quot;: 12,
+    &quot;run_id&quot;: &quot;9c24d7a8e8d1479f920a2b147a1b6d72&quot;,
+    &quot;time&quot;: 1794127623.8953638,
+    &quot;type&quot;: &quot;transition&quot;,
+    &quot;body&quot;: {
+      &quot;from&quot;: &quot;CONFIRMED&quot;,
+      &quot;to&quot;: &quot;PATCHED&quot;
+    }
+  },
+  {
+    &quot;id&quot;: 13,
+    &quot;run_id&quot;: &quot;9c24d7a8e8d1479f920a2b147a1b6d72&quot;,
+    &quot;time&quot;: 1794127624.0401342,
+    &quot;type&quot;: &quot;transition&quot;,
+    &quot;body&quot;: {
+      &quot;from&quot;: &quot;PATCHED&quot;,
+      &quot;to&quot;: &quot;VERIFIED&quot;
+    }
+  },
+  {
+    &quot;id&quot;: 14,
+    &quot;run_id&quot;: &quot;9c24d7a8e8d1479f920a2b147a1b6d72&quot;,
+    &quot;time&quot;: 1794127624.10265,
+    &quot;type&quot;: &quot;transition&quot;,
+    &quot;body&quot;: {
+      &quot;from&quot;: &quot;VERIFIED&quot;,
+      &quot;to&quot;: &quot;DONE&quot;
+    }
+  }
+]</pre></html>

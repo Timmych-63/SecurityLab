@@ -1,0 +1,7 @@
+{"id": 8, "run_id": "9c24d7a8e8d1479f920a2b147a1b6d72", "time": 1794127623.4992363, "type": "created", "body": {"mode": "scripted-demo-no-ai"}}
+{"id": 9, "run_id": "9c24d7a8e8d1479f920a2b147a1b6d72", "time": 1794127623.4994378, "type": "started", "body": {"attempt": 1}}
+{"id": 10, "run_id": "9c24d7a8e8d1479f920a2b147a1b6d72", "time": 1794127623.645807, "type": "transition", "body": {"from": "QUEUED", "to": "DISCOVERED"}}
+{"id": 11, "run_id": "9c24d7a8e8d1479f920a2b147a1b6d72", "time": 1794127623.6879785, "type": "transition", "body": {"from": "DISCOVERED", "to": "CONFIRMED"}}
+{"id": 12, "run_id": "9c24d7a8e8d1479f920a2b147a1b6d72", "time": 1794127623.8953638, "type": "transition", "body": {"from": "CONFIRMED", "to": "PATCHED"}}
+{"id": 13, "run_id": "9c24d7a8e8d1479f920a2b147a1b6d72", "time": 1794127624.0401342, "type": "transition", "body": {"from": "PATCHED", "to": "VERIFIED"}}
+{"id": 14, "run_id": "9c24d7a8e8d1479f920a2b147a1b6d72", "time": 1794127624.10265, "type": "transition", "body": {"from": "VERIFIED", "to": "DONE"}}

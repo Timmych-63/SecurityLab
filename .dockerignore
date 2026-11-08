@@ -1,0 +1,6 @@
+.git
+.securitylab
+__pycache__
+*.zip
+*.bundle
+.env
