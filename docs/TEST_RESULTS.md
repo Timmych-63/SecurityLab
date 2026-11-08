@@ -50,3 +50,13 @@ Docker: по выводу пользователя клиент/Compose уста
 Это unit-тесты логики; реальные 16 проверок на Docker ПК пользователя ещё не выполнены.
 Из присланного вывода пользователя: Windows UTF8 fix подтверждён (37 PASS, 1 SKIP),
 Docker Linux Engine, сборка образа и demo DONE подтверждены.
+
+## S2 — Linux, 2026-11-08
+
+70 tests PASS, 0 FAIL, 0 SKIP, 20.360 s. Полный вывод: test-s2-output.txt.
+25 новых тестов: строгий job-контракт и Unicode, запрещённые поля/пути/дубликаты,
+ресурсные аргументы, stdin/EOF/тайм-аут записи, проверка Docker endpoint/image,
+обработка exit status, timeout, OOM, ошибок, cleanup и сохранение intent до create.
+DockerBroker в этих проверках использует FakeDocker: живой Docker S2 NOT TESTED.
+Фактические пять сценариев --self-test требуется выполнить на ПК пользователя.
+S1 на ПК пользователя уже подтверждён: 16 PASS, b4f21324bcaf419ea62cece28fecb87c.

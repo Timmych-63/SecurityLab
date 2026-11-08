@@ -27,10 +27,12 @@ class Result:
         return asdict(self)
 
 
-def execute(argv: list[str], cwd: Path, limits: Limits, stop=lambda: False, env=None):
+def execute(argv: list[str], cwd: Path, limits: Limits, stop=lambda: False, env=None, input_data=None):
+    if input_data is not None and (not isinstance(input_data, bytes) or len(input_data) > 1048576):
+        raise ValueError("stdin must be bytes, at most 1 MiB")
     started = time.monotonic()
     process = subprocess.Popen(argv, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                               stdin=subprocess.DEVNULL, env=env, start_new_session=os.name != 'nt')
+                               stdin=subprocess.PIPE if input_data is not None else subprocess.DEVNULL, env=env, start_new_session=os.name != 'nt')
     buffers = [bytearray(), bytearray()]
     overflow = threading.Event()
     def drain(stream, buf):
@@ -42,6 +44,19 @@ def execute(argv: list[str], cwd: Path, limits: Limits, stop=lambda: False, env=
         stream.close()
     threads = [threading.Thread(target=drain, args=(stream, buf), daemon=True)
                for stream, buf in zip((process.stdout, process.stderr), buffers)]
+    if input_data is not None:
+        def feed():
+            try:
+                process.stdin.write(input_data)
+                process.stdin.flush()
+            except (BrokenPipeError, OSError):
+                pass
+            finally:
+                try:
+                    process.stdin.close()
+                except OSError:
+                    pass
+        threads.append(threading.Thread(target=feed, daemon=True))
     for thread in threads:
         thread.start()
     timed_out = cancelled = False

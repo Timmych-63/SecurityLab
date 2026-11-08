@@ -90,3 +90,12 @@ CPU/memory/PID — чтение фактических cgroup-потолков �
 - https://docs.kernel.org/admin-guide/cgroup-v2.html
 - https://docs.docker.com/engine/network/drivers/none
 - https://docs.docker.com/engine/containers/run/
+
+## Реализация S2
+
+container_runner.py — доверенный broker на хосте; job_contract.py — формат входных файлов;
+container_worker.py — bootstrap внутри нового контейнера. process.py дополнен ограниченным
+stdin-потоком с передачей EOF. Источник входа не управляет Docker flags/image/mounts.
+Broker → Docker create/inspect → stdin job → ограниченное выполнение → rm/проверка cleanup.
+Доказательства S2 пока не принимаются основным валидатором: stdout недоверен.
+Реализован Python-only механизм, не универсальный тестовый стенд. См. S2_RUNNER.md.

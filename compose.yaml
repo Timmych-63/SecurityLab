@@ -1,6 +1,7 @@
 # M1/M2 demo only; NOT the final multi-service AI deployment.
 services:
   demo:
+    image: securitylab-demo:local
     build: .
     command: ["--state", "/data", "demo"]
     network_mode: none
