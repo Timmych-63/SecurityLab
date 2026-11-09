@@ -93,3 +93,9 @@
   остаётся BLOCKED. Нет передачи исходников модели.
 - Добавлены 22 новых unit/негативных теста и три учебных разных проекта.
 - Актуальные команды и ограничения: `README_S6_1_RU.md`, `docs/S6_1.md`.
+
+## S6.2.2 — 2026-11-09
+- Fixed Windows unittest cleanup of reopened SQLite connection in `tests/test_snapshots.py`.
+- Added cross-platform regression test detecting the stale bound-method cleanup.
+- No runtime code changed. Local: 18 snapshot + 22 repository tests PASS.
+- Windows user verification pending; no change to execution permission.

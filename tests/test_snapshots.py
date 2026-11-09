@@ -3,6 +3,7 @@ import contextlib
 import io
 import json
 import os
+import sqlite3
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -27,7 +28,10 @@ class SnapshotTests(unittest.TestCase):
         self.source.mkdir()
         self.state = self.base / 'state'
         self.store = Store(self.state)
-        self.addCleanup(self.store.close)
+        # Resolve self.store at cleanup time: one test reopens SQLite.
+        # Registering the original bound close method leaks the reopened handle
+        # and Windows refuses to remove state.sqlite3 (WinError 32).
+        self.addCleanup(lambda: self.store.close())
 
     def put(self, name, value):
         path = self.source / name
@@ -221,6 +225,16 @@ class SnapshotTests(unittest.TestCase):
             create_snapshot(self.store, '../foo')
         with self.assertRaises(PolicyError):
             verify_snapshot(self.store, '../../etc')
+
+    def test_reopened_connection_closed_on_cleanup(self):
+        """Regression: on Windows, a live SQLite handle blocks temp cleanup."""
+        self.store.close()
+        self.store = Store(self.state)
+        # Run the real TestCase cleanup callbacks inside the test so this
+        # contract also fails on Linux if the reopened connection leaks.
+        self.doCleanups()
+        with self.assertRaises(sqlite3.ProgrammingError):
+            self.store.db.execute('SELECT 1')
 
     def test_restart_and_sqlite_snapshot_persistence(self):
         self.put('x.py', 'pass')
