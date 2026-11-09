@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -49,6 +50,57 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual((Path(result['workspace']) / 'src/api.py').read_text(), 'hello=123')
         self.assertEqual(len(list_snapshots(self.store, pid)), 1)
         self.assertFalse((self.source / '.securitylab').exists())
+
+    def test_windows_cached_direntry_zero_identity_is_not_a_false_change(self):
+        """Reproduce Windows Python 3.13 DirEntry.stat st_dev/st_ino=0."""
+        self.put('src/api.py', 'answer = 42')
+        real_scandir = os.scandir
+
+        class WindowsLikeEntry:
+            def __init__(self, raw):
+                self.raw = raw
+                self.name, self.path = raw.name, raw.path
+
+            def stat(self, *, follow_symlinks=True):
+                original = self.raw.stat(follow_symlinks=follow_symlinks)
+                if follow_symlinks:
+                    return original
+                return SimpleNamespace(
+                    st_mode=original.st_mode, st_size=original.st_size,
+                    st_mtime_ns=original.st_mtime_ns, st_dev=0, st_ino=0,
+                    st_file_attributes=getattr(original, 'st_file_attributes', 0),
+                )
+
+        class WindowsLikeScandir:
+            def __init__(self, path):
+                self.real = real_scandir(path)
+
+            def __enter__(self):
+                self.real.__enter__()
+                return self
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                return self.real.__exit__(exc_type, exc_value, traceback)
+
+            def __iter__(self):
+                for entry in self.real:
+                    yield WindowsLikeEntry(entry)
+
+        # Both the walk and subsequent verifier compare Windows-like cached
+        # listing metadata with real lstat/fstat handle metadata.
+        with patch('os.scandir', side_effect=WindowsLikeScandir):
+            result, _ = self.create()
+            check = verify_snapshot(self.store, result['snapshot_id'])
+        self.assertEqual(check['status'], 'VERIFIED_CONTENT_HASHES')
+
+    def test_source_replaced_after_directory_listing_fails_closed(self):
+        from securitylab.snapshots import _fresh_regular
+        original = self.put('code.py', 'original')
+        listing = original.lstat()
+        original.unlink()
+        original.write_text('changed-different-size', encoding='utf-8')
+        with self.assertRaisesRegex(PolicyError, 'changed between enumeration'):
+            _fresh_regular(original, listing, 'Source')
 
     def test_skips_common_secret_files_and_excluded_directories(self):
         self.put('app/main.py', 'pass')

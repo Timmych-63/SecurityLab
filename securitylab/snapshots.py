@@ -60,8 +60,37 @@ def _safe_dir(path: Path) -> None:
 
 
 def _stat_same(before, after) -> bool:
+    """Compare freshly queried path/handle metadata, not cached DirEntry data."""
     return (before.st_size, before.st_mtime_ns, before.st_dev, before.st_ino) == (
         after.st_size, after.st_mtime_ns, after.st_dev, after.st_ino)
+
+
+def _entry_matches_fresh(cached, fresh) -> bool:
+    """Compare a directory listing with a fresh lstat across Windows/POSIX.
+
+    On Windows os.DirEntry.stat(follow_symlinks=False) sets st_dev and st_ino
+    to ZERO even for regular files (Python 3.13 documentation); pathlib.lstat
+    and os.fstat can return real identifiers. Never use a zero from the cached
+    listing as the identity of the opened file. Fresh lstat <-> fstat remains
+    a strict identity comparison in _stat_same.
+    """
+    if (stat.S_IFMT(cached.st_mode), cached.st_size, cached.st_mtime_ns) != (
+            stat.S_IFMT(fresh.st_mode), fresh.st_size, fresh.st_mtime_ns):
+        return False
+    return (not cached.st_dev or not fresh.st_dev or cached.st_dev == fresh.st_dev) and (
+        not cached.st_ino or not fresh.st_ino or cached.st_ino == fresh.st_ino)
+
+
+def _fresh_regular(path: Path, listing, label: str):
+    """Reject a replaced/reparse path, then pin subsequent comparisons to lstat."""
+    try:
+        fresh = path.lstat()
+    except OSError as exc:
+        raise PolicyError(f'{label} cannot be safely checked') from exc
+    if (not stat.S_ISREG(fresh.st_mode) or _reparse(fresh) or path.is_symlink()
+            or not _entry_matches_fresh(listing, fresh)):
+        raise PolicyError(f'{label} changed between enumeration and open')
+    return fresh
 
 
 def _copy_regular(source: Path, target: Path, observed, remaining: int) -> tuple[str, int]:
@@ -155,7 +184,12 @@ def _walk_and_copy(source: Path, work: Path) -> tuple[list[dict], int, int, int]
                     raise PolicyError('Snapshot file or total byte limit exceeded')
                 destination = work / rel
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                digest, size = _copy_regular(Path(entry.path), destination, st, MAX_SNAPSHOT_BYTES - bytes_used)
+                source_path = Path(entry.path)
+                # Windows DirEntry.stat() has zero st_dev/st_ino, unlike fstat.
+                # A fresh lstat both checks for replacement and provides an
+                # identity that can actually be compared with the open handle.
+                fresh = _fresh_regular(source_path, st, 'Source')
+                digest, size = _copy_regular(source_path, destination, fresh, MAX_SNAPSHOT_BYTES - bytes_used)
                 bytes_used += size
                 files.append({'path': rel.as_posix(), 'size': size, 'sha256': digest})
             else:
@@ -328,13 +362,14 @@ def verify_snapshot(store, snapshot_id: str) -> dict:
             elif stat.S_ISREG(st.st_mode):
                 if rel not in mapping or rel in seen:
                     raise PolicyError('Snapshot contains an extra or duplicate file')
-                if st.st_size != mapping[rel]['size']:
+                fresh = _fresh_regular(Path(entry.path), st, 'Snapshot file')
+                if fresh.st_size != mapping[rel]['size']:
                     raise PolicyError('Snapshot file size mismatch')
                 flags = os.O_RDONLY | getattr(os, 'O_BINARY', 0) | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_NONBLOCK', 0)
                 fd = os.open(entry.path, flags)
                 try:
                     fst = os.fstat(fd)
-                    if not stat.S_ISREG(fst.st_mode) or not _stat_same(st, fst):
+                    if not stat.S_ISREG(fst.st_mode) or not _stat_same(fresh, fst):
                         raise PolicyError('Snapshot file changed during verification')
                     digest = hashlib.sha256()
                     received = 0
