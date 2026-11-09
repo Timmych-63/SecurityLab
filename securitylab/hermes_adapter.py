@@ -3,7 +3,8 @@ import json
 from pathlib import Path
 import uuid
 import sys
-from .ai_contract import HERMES_REVISION, MODEL, MODEL_DIGEST, digest, prompt, strict_json, validate_proposal, request
+from .ai_contract import HERMES_REVISION, MODEL, MODEL_DIGEST, digest, strict_json
+from .proposal_modes import proposal_prompt, proposal_validate, proposal_retry
 from .container_runner import IMAGE_ID
 from .policy import Limits, PolicyError
 from .process import execute
@@ -27,7 +28,7 @@ def validate_envelope(req, value):
         if not isinstance(proposal, dict) or proposal != {'ready': True} or type(proposal['ready']) is not bool:
             raise PolicyError('Invalid model smoke reply')
     else:
-        validate_proposal(req['role'], proposal, candidate=req.get('verification') == 'actual-candidate-v1')
+        proposal_validate(req, proposal)
     return proposal
 
 
@@ -78,18 +79,17 @@ class HermesAdapter:
         return result
 
     def ask(self, req, stop=lambda: False):
-        prompt(req)
+        proposal_prompt(req)
         try:
             return self._ask_once(req, stop)
         except ProposalRejected as exc:
             if req['role'] != 'blue' or 'retry' in req or not exc.cleanup_passed or stop():
                 raise
             print('Blue: proposal rejected; starting final corrective attempt.', file=sys.stderr, flush=True)
-            return self._ask_once(request('blue', req['finding'], exc.previous,
-                                         candidate=req.get('verification') == 'actual-candidate-v1'), stop)
+            return self._ask_once(proposal_retry(req, exc.previous), stop)
 
     def _ask_once(self, req, stop):
-        prompt(req)
+        proposal_prompt(req)
         attempt = 2 if 'retry' in req else 1
         print(f"{req['role']}: attempt {attempt}, timeout 300 seconds", file=sys.stderr, flush=True)
         identity = uuid.uuid4().hex

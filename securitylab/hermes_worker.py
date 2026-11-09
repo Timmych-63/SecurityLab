@@ -5,12 +5,13 @@ import os
 from pathlib import Path
 import sys
 from urllib.request import urlopen
-from .ai_contract import HERMES_REVISION, MODEL, MODEL_DIGEST, prompt, strict_json, validate_proposal, digest, blue_feedback, response_system
+from .ai_contract import HERMES_REVISION, MODEL, MODEL_DIGEST, strict_json, digest
+from .proposal_modes import proposal_prompt, proposal_validate, proposal_feedback, proposal_system
 from .policy import PolicyError
 
 
 def invoke(req, agent_class, capture=None):
-    query = prompt(req)
+    query = proposal_prompt(req)
     attempt = 2 if 'retry' in req else 1
     agent = agent_class(model=MODEL, base_url='http://model:11434/v1', api_key='local-only',
                         provider='custom', api_mode='chat_completions', enabled_toolsets=[],
@@ -25,7 +26,7 @@ def invoke(req, agent_class, capture=None):
     def deny(*args, **kwargs):
         raise PolicyError('Tool execution forbidden in proposal mode')
     agent._execute_tool_calls = deny
-    result = agent.run_conversation(user_message=query, system_message=response_system(req['role']))
+    result = agent.run_conversation(user_message=query, system_message=proposal_system(req))
     if not isinstance(result, dict) or result.get('error'):
         raise PolicyError('Hermes conversation failed')
     for message in result.get('messages', []):
@@ -41,11 +42,11 @@ def invoke(req, agent_class, capture=None):
             if value != {'ready': True} or type(value['ready']) is not bool:
                 raise PolicyError('Smoke response invalid')
         else:
-            validate_proposal(req['role'], value, candidate=req.get('verification') == 'actual-candidate-v1')
+            proposal_validate(req, value)
     except PolicyError as exc:
         print('AI_ATTEMPT_JSON=' + json.dumps({'role': req['role'], 'attempt': attempt,
               'status': 'REJECTED', 'reason': str(exc),
-              'feedback': blue_feedback(value, candidate=req.get('verification') == 'actual-candidate-v1') if req['role'] == 'blue' else [str(exc)]}), file=sys.stderr)
+              'feedback': proposal_feedback(req, value) if req['role'] == 'blue' else [str(exc)]}), file=sys.stderr)
         raise
     print('AI_ATTEMPT_JSON=' + json.dumps({'role': req['role'], 'attempt': attempt,
           'status': 'ADMITTED'}), file=sys.stderr)
@@ -60,7 +61,7 @@ def main():
         if len(raw) > 32768:
             raise PolicyError('Request too large')
         req = strict_json(raw.decode('utf-8'))
-        prompt(req)
+        proposal_prompt(req)
         # The only runtime model endpoint is on the private Docker network.
         with urlopen('http://model:11434/api/tags', timeout=10) as response:
             body = response.read(1048577)

@@ -83,6 +83,13 @@ def main(argv=None):
     access.add_argument('--policy', type=Path, required=True,
                         help='External trusted JSON policy outside tested project/state')
     access.add_argument('--execute', action='store_true')
+    access_ai = repo_sub.add_parser('access-ai',
+        help='S7.2 opt-in Red/Blue bounded FastAPI access fix and independent Git/HTTP recheck')
+    access_ai.add_argument('snapshot_id')
+    access_ai.add_argument('--service', default='.')
+    access_ai.add_argument('--entry', required=True)
+    access_ai.add_argument('--policy', type=Path, required=True)
+    access_ai.add_argument('--execute', action='store_true')
     args = parser.parse_args(argv)
     if args.command == 'doctor':
         print(json.dumps({'python': sys.version.split()[0], 'core': 'PASS',
@@ -160,6 +167,10 @@ def main(argv=None):
                 from .access_baseline import access_baseline_snapshot
                 result = access_baseline_snapshot(store, args.snapshot_id, args.entry, args.policy,
                                                   service=args.service, execute=args.execute, limits=limits)
+            elif args.repo_command == 'access-ai':
+                from .access_ai import run_access_ai
+                result = run_access_ai(store, args.snapshot_id, args.entry, args.policy,
+                                       service=args.service, execute=args.execute, limits=limits)
             elif args.repo_command in {'snapshot', 'snapshots', 'verify-snapshot', 'plan'}:
                 from .snapshots import create_snapshot, list_snapshots, verify_snapshot
                 if args.repo_command == 'snapshot':
@@ -206,6 +217,8 @@ def main(argv=None):
             store.get(args.run)
             result = {'report': str(report(store, args.run, output))}
         print(json.dumps(result, ensure_ascii=False, indent=2))
+        if args.command == 'repo' and args.repo_command == 'access-ai':
+            return 0 if result['status'] == 'PASS' else 2
         if args.command == 'repo' and args.repo_command == 'access-baseline':
             return {'ACCESS_POLICY_MATCHED': 0, 'ACCESS_POLICY_VIOLATION_REPRODUCED': 3}.get(result['status'], 2)
         if args.command == 'repo' and args.repo_command in {'http-probe', 'fastapi-probe', 'fastapi-package-probe'}:
