@@ -64,7 +64,8 @@ class CandidateTests(unittest.TestCase):
     def test_request_mode_is_bound(self):
         finding=dict(file='service.py',description='access',user='attacker',record_id='one')
         req=request('blue',finding,candidate=True)
-        self.assertIn('actual-candidate-v1',prompt(req))
+        self.assertNotIn('actual-candidate-v1',prompt(req))
+        self.assertEqual(req['verification'],'actual-candidate-v1')
         with self.assertRaises(PolicyError):prompt(dict(req,verification='anything'))
     def check(self, source, fault=None):
         with tempfile.TemporaryDirectory() as td:
