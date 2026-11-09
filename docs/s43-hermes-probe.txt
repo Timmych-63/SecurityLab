@@ -1,0 +1,2 @@
+AI_ATTEMPT_JSON={"role": "smoke", "attempt": 1, "status": "ADMITTED"}
+{"json_format_verified": true, "system_schema_verified": true, "status": "PASS", "real_hermes": true, "model_endpoint": "FAKE_HTTP", "calls": [["/v1/chat/completions", null]], "result": {"ready": true}}

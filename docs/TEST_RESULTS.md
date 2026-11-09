@@ -83,3 +83,8 @@ User S4 real Hermes/model smoke PASS; full exercise blocked at Red before execut
 ## S4.2
 119 automated tests PASS (29.267s), test-s42-output.txt. Includes bounded Blue retry
 with scripted model responses; live model improvement/full cycle NOT TESTED.
+
+## S4.3
+119 tests PASS (31.300s), test-s43-output.txt. Actual pinned Hermes outgoing request
+system schema/JSON mode probe PASS against fake model HTTP; s43-hermes-probe.txt.
+Live S4.3 model/Windows validation pending.

@@ -58,3 +58,8 @@
 - Added static Blue diagnostics and one fresh corrective conversation after rejected output.
 - Preserve both attempts and feedback, share existing time budget, retain AST/S3 gates.
 - Improved complete-module prompt; no retry on forbidden tools/provider failure.
+
+## S4.3
+- Separate Blue containers/time budgets with cleanup before correction.
+- JSON response mode and system-level schema, verified on real Hermes API/fake server.
+- Explicit timeout/resource/cancellation/output-limit diagnostics and console progress.

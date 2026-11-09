@@ -42,3 +42,10 @@ proposal blocked before execution (missing RECORDS, owner read before 404 guard)
 S4.2 adds one bounded corrective retry, preserving strict AST/S3 checks and both replies.
 Same total role timeouts. Next: cached Hermes rebuild and ai-demo; no model download.
 Live full AI cycle still pending. See S4_2_BLUE_RETRY.md.
+
+## S4.3 current checkpoint
+User e81dfed72e514e2f9ab8f72c30b27ce4 timed out in Blue after 300.0245s, cleanup PASS.
+S4.3 replaces shared-budget retries with separate containers and 300s per attempt.
+Added system JSON contract, JSON response_format, explicit timeout status/progress.
+119 automated tests and real-Hermes/fake-HTTP format probe PASS; live S4.3 pending.
+Next: cached Hermes rebuild, ensure model running, ai-demo. See S4_3_ATTEMPTS.md.

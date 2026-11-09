@@ -149,59 +149,64 @@ class RedRegressionTests(unittest.TestCase):
         with self.assertRaises(PolicyError):invoke(request('red'),InvalidAgent,captured.append)
         self.assertEqual(captured,['not JSON'])
 
-class BlueRetryTests(unittest.TestCase):
-    bad_source = '''def read_record(user, record_id):
-    if user is None:
-        return 401, None
-    owner = RECORDS.get(record_id)["owner"]
-    if user != owner:
-        return 403, None
-    record = RECORDS.get(record_id)
-    if record is None:
-        return 404, None
-    return 200, record["value"]
-'''
-    def factory(self, replies, queries, agents, tools=False):
-        class SequenceAgent:
-            def __init__(self, **kwargs):
-                self.tools=['terminal'] if tools else []
-                self.kwargs=kwargs; agents.append(self)
-            def run_conversation(self, **kwargs):
-                queries.append(kwargs['user_message'])
-                return {'final_response':replies.pop(0), 'messages':[]}
-        return SequenceAgent
-    def test_real_failed_patch_gets_feedback_then_corrected(self):
-        import contextlib,io
-        replies=[json.dumps(dict(BLUE,content=self.bad_source)),json.dumps(BLUE)]
-        queries=[];agents=[];captured=[];logs=io.StringIO()
-        with contextlib.redirect_stderr(logs):
-            result=invoke(request('blue',RED),self.factory(replies,queries,agents),captured.append)
-        self.assertEqual(result,BLUE);self.assertEqual(len(agents),2);self.assertEqual(len(captured),2)
-        self.assertIn('RECORDS assignment',queries[1]);self.assertIn('Do not dereference owner',queries[1])
-        self.assertIn('"status": "REJECTED"',logs.getvalue());self.assertIn('"attempt": 2',logs.getvalue())
-        self.assertLessEqual(agents[1].kwargs['run_budget_seconds'],agents[0].kwargs['run_budget_seconds'])
-        self.assertNotIn(FIXED,queries[1])
-    def test_two_rejections_stop_without_auto_fix(self):
-        queries=[];agents=[]
-        replies=[json.dumps(dict(BLUE,content=self.bad_source))]*3
-        with self.assertRaisesRegex(PolicyError,'after 2 attempt'):
-            invoke(request('blue',RED),self.factory(replies,queries,agents))
-        self.assertEqual(len(queries),2);self.assertEqual(len(replies),1)
-    def test_valid_first_attempt_not_repeated(self):
-        queries=[];agents=[]
-        invoke(request('blue',RED),self.factory([json.dumps(BLUE)],queries,agents))
-        self.assertEqual(len(agents),1)
-    def test_malformed_json_can_be_corrected(self):
-        queries=[];agents=[]
-        self.assertEqual(invoke(request('blue',RED),self.factory(['not JSON',json.dumps(BLUE)],queries,agents)),BLUE)
-    def test_unexpected_tools_are_not_retried(self):
-        queries=[];agents=[]
-        with self.assertRaises(PolicyError):invoke(request('blue',RED),self.factory([],queries,agents,tools=True))
-        self.assertEqual(len(agents),1);self.assertEqual(queries,[])
-    def test_exhausted_budget_prevents_second_call(self):
-        from unittest.mock import patch
-        queries=[];agents=[]
-        with patch('securitylab.hermes_worker.time.monotonic',side_effect=[0,0,241]):
-            with self.assertRaisesRegex(PolicyError,'time budget'):
-                invoke(request('blue',RED),self.factory(['not JSON'],queries,agents))
-        self.assertEqual(len(agents),1)
+class BlueAttemptTransport(DockerTransport):
+    def __init__(self, always_reject=False, bad=None):
+        super().__init__(bad);self.starts=0;self.always_reject=always_reject;self.limits=[]
+    def __call__(self,argv,cwd,limits,**kwargs):
+        r=super().__call__(argv,cwd,limits,**kwargs)
+        args=argv[3:] if '--host' in argv else argv[1:]
+        if args[0]=='start':
+            self.starts+=1;self.limits.append(limits.timeout)
+            req=json.loads(kwargs['input_data'])
+            if self.starts==1 or self.always_reject:
+                r.returncode=2;r.stdout=''
+                raw=json.dumps(dict(BLUE,content='def read_record(user, record_id): pass'))
+                r.stderr='AI_RESPONSE_JSON='+json.dumps(raw)+'\nAI_ATTEMPT_JSON='+json.dumps({'role':'blue','attempt':self.starts,'status':'REJECTED'})
+            else:r.stdout=json.dumps(envelope(req,BLUE))
+        if args[0]=='inspect' and '--format' in args:
+            state=json.loads(r.stdout);state['ExitCode']=2 if self.starts==1 or self.always_reject else 0;r.stdout=json.dumps(state)
+        return r
+
+class IndependentAttemptTests(unittest.TestCase):
+    def test_two_containers_independent_budgets_and_receipts(self):
+        with tempfile.TemporaryDirectory() as d:
+            fake=BlueAttemptTransport();a=HermesAdapter(Path(d),Path(d)/'calls',fake)
+            value,record=a.ask(request('blue',RED))
+            self.assertEqual(value,BLUE);self.assertEqual(fake.limits,[300,300]);self.assertEqual(record['attempt'],2)
+            records=[json.loads(p.read_text()) for p in (Path(d)/'calls').glob('*.json')]
+            self.assertEqual(len(records),2);self.assertEqual({r['status'] for r in records},{'REJECTED','PROPOSED'})
+            self.assertTrue(all(r['cleanup']=='PASS' for r in records))
+            creates=[i for i,c in enumerate(fake.calls) if 'create' in c];removes=[i for i,c in enumerate(fake.calls) if 'rm' in c]
+            self.assertLess(removes[0],creates[1])
+    def test_stop_after_two_rejections(self):
+        with tempfile.TemporaryDirectory() as d:
+            fake=BlueAttemptTransport(always_reject=True)
+            with self.assertRaises(PolicyError):HermesAdapter(Path(d),Path(d)/'calls',fake).ask(request('blue',RED))
+            self.assertEqual(fake.starts,2)
+    def test_cleanup_failure_does_not_retry(self):
+        with tempfile.TemporaryDirectory() as d:
+            fake=BlueAttemptTransport(bad='cleanup')
+            with self.assertRaises(PolicyError):HermesAdapter(Path(d),Path(d)/'calls',fake).ask(request('blue',RED))
+            self.assertEqual(fake.starts,1)
+    def test_timeout_status_and_no_retry(self):
+        with tempfile.TemporaryDirectory() as d:
+            fake=BlueAttemptTransport(bad='timeout')
+            with self.assertRaisesRegex(PolicyError,'TIMEOUT'):HermesAdapter(Path(d),Path(d)/'calls',fake).ask(request('blue',RED))
+            self.assertEqual(fake.starts,1)
+            record=json.loads(next((Path(d)/'calls').glob('*.json')).read_text())
+            self.assertEqual(record['status'],'TIMEOUT');self.assertEqual(record['cleanup'],'PASS')
+    def test_retry_request_bounds_and_feedback(self):
+        retry=request('blue',RED,json.dumps(dict(BLUE,content='def read_record(user, record_id): pass')))
+        self.assertIn('RECORDS assignment',prompt(retry))
+        with self.assertRaises(PolicyError):request('red',retry='anything')
+        with self.assertRaises(PolicyError):request('blue',RED,'x'*16001)
+    def test_worker_one_attempt_system_schema(self):
+        class OneAgent(Agent):
+            reply=json.dumps(BLUE);tool_list=[];messages=[];instances=[]
+            def run_conversation(self,**kwargs):
+                self.conversation=kwargs;return super().run_conversation(**kwargs)
+        self.assertEqual(invoke(request('blue',RED),OneAgent),BLUE)
+        self.assertEqual(len(OneAgent.instances),1)
+        a=OneAgent.instances[0]
+        self.assertIn('Allowed keys: file, content',a.conversation['system_message'])
+        self.assertEqual(a.kwargs['request_overrides']['response_format'],{'type':'json_object'})

@@ -4,65 +4,52 @@ import json
 import os
 from pathlib import Path
 import sys
-import time
 from urllib.request import urlopen
-from .ai_contract import HERMES_REVISION, MODEL, MODEL_DIGEST, prompt, strict_json, validate_proposal, digest, blue_feedback
+from .ai_contract import HERMES_REVISION, MODEL, MODEL_DIGEST, prompt, strict_json, validate_proposal, digest, blue_feedback, response_system
 from .policy import PolicyError
 
 
 def invoke(req, agent_class, capture=None):
-    initial_query = prompt(req)
-    query = initial_query
-    started = time.monotonic()
-    attempts = 2 if req['role'] == 'blue' else 1
-    for attempt in range(1, attempts + 1):
-        remaining = 240 - (time.monotonic() - started)
-        if remaining <= 0:
-            raise PolicyError('AI role time budget exhausted')
-        agent = agent_class(model=MODEL, base_url='http://model:11434/v1', api_key='local-only',
-                            provider='custom', api_mode='chat_completions', enabled_toolsets=[],
-                            quiet_mode=True, skip_context_files=True, skip_memory=True,
-                            skip_background_review=True, load_soul_identity=False,
-                            save_trajectories=False, max_iterations=2, max_tokens=2048,
-                            run_budget_seconds=remaining, fallback_model=None,
-                            reasoning_config={'enabled': False},
-                            request_overrides={'temperature': 0})
-        if agent.tools:
-            raise PolicyError('Hermes unexpectedly enabled tools')
-        def deny(*args, **kwargs):
-            raise PolicyError('Tool execution forbidden in proposal mode')
-        agent._execute_tool_calls = deny
-        result = agent.run_conversation(user_message=query)
-        if not isinstance(result, dict) or result.get('error'):
-            raise PolicyError('Hermes conversation failed')
-        for message in result.get('messages', []):
-            if message.get('role') == 'tool' or message.get('tool_calls'):
-                raise PolicyError('Unexpected tool invocation')
-        raw_response = result.get('final_response')
-        if capture is not None:
-            capture(raw_response[:32768] if isinstance(raw_response, str) else None)
-        value = None
-        try:
-            value = strict_json(raw_response)
-            if req['role'] == 'smoke':
-                if value != {'ready': True} or type(value['ready']) is not bool:
-                    raise PolicyError('Smoke response invalid')
-            else:
-                validate_proposal(req['role'], value)
-            print('AI_ATTEMPT_JSON=' + json.dumps({'role': req['role'], 'attempt': attempt,
-                  'status': 'ADMITTED'}), file=sys.stderr)
-            return value
-        except PolicyError as exc:
-            feedback = blue_feedback(value) if req['role'] == 'blue' else [str(exc)]
-            print('AI_ATTEMPT_JSON=' + json.dumps({'role': req['role'], 'attempt': attempt,
-                  'status': 'REJECTED', 'reason': str(exc), 'feedback': feedback}), file=sys.stderr)
-            if attempt == attempts:
-                raise PolicyError(f"{req['role']} rejected after {attempt} attempt(s): {exc}") from exc
-            # One fresh conversation with bounded rejected data and deterministic feedback.
-            # No known FIXED source is given to the model and no code is patched here.
-            previous = raw_response[:16000] if isinstance(raw_response, str) else None
-            query = initial_query + '\nYour previous proposal was rejected. Correct it once. ' + json.dumps({
-                'previous_response_untrusted': previous, 'validator_feedback': feedback}, ensure_ascii=True)
+    query = prompt(req)
+    attempt = 2 if 'retry' in req else 1
+    agent = agent_class(model=MODEL, base_url='http://model:11434/v1', api_key='local-only',
+                        provider='custom', api_mode='chat_completions', enabled_toolsets=[],
+                        quiet_mode=True, skip_context_files=True, skip_memory=True,
+                        skip_background_review=True, load_soul_identity=False,
+                        save_trajectories=False, max_iterations=2, max_tokens=2048,
+                        run_budget_seconds=240, fallback_model=None,
+                        reasoning_config={'enabled': False},
+                        request_overrides={'temperature': 0, 'response_format': {'type': 'json_object'}})
+    if agent.tools:
+        raise PolicyError('Hermes unexpectedly enabled tools')
+    def deny(*args, **kwargs):
+        raise PolicyError('Tool execution forbidden in proposal mode')
+    agent._execute_tool_calls = deny
+    result = agent.run_conversation(user_message=query, system_message=response_system(req['role']))
+    if not isinstance(result, dict) or result.get('error'):
+        raise PolicyError('Hermes conversation failed')
+    for message in result.get('messages', []):
+        if message.get('role') == 'tool' or message.get('tool_calls'):
+            raise PolicyError('Unexpected tool invocation')
+    raw_response = result.get('final_response')
+    if capture is not None:
+        capture(raw_response[:32768] if isinstance(raw_response, str) else None)
+    value = None
+    try:
+        value = strict_json(raw_response)
+        if req['role'] == 'smoke':
+            if value != {'ready': True} or type(value['ready']) is not bool:
+                raise PolicyError('Smoke response invalid')
+        else:
+            validate_proposal(req['role'], value)
+    except PolicyError as exc:
+        print('AI_ATTEMPT_JSON=' + json.dumps({'role': req['role'], 'attempt': attempt,
+              'status': 'REJECTED', 'reason': str(exc),
+              'feedback': blue_feedback(value) if req['role'] == 'blue' else [str(exc)]}), file=sys.stderr)
+        raise
+    print('AI_ATTEMPT_JSON=' + json.dumps({'role': req['role'], 'attempt': attempt,
+          'status': 'ADMITTED'}), file=sys.stderr)
+    return value
 
 
 def main():

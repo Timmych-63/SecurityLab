@@ -12,13 +12,14 @@ from run_agent import AIAgent
 from securitylab.hermes_worker import invoke
 from securitylab.ai_contract import request
 calls=[]
+requests=[]
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*args):pass
     def do_GET(self):
         data={'object':'list','data':[{'id':'qwen3.5:2b','object':'model','context_length':64000}]}
         self.send_response(200);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(json.dumps(data).encode())
     def do_POST(self):
-        body=json.loads(self.rfile.read(int(self.headers['Content-Length'])));calls.append((self.path,body.get('tools')))
+        body=json.loads(self.rfile.read(int(self.headers['Content-Length'])));requests.append((self.path,body));calls.append((self.path,body.get('tools')))
         value={'id':'test','object':'chat.completion','model':'qwen3.5:2b','choices':[{'index':0,'message':{'role':'assistant','content':'{"ready":true}'},'finish_reason':'stop'}], 'usage':{'prompt_tokens':50,'completion_tokens':5,'total_tokens':55}}
         if body.get('stream'):
             self.send_response(200);self.send_header('Content-Type','text/event-stream');self.end_headers()
@@ -34,7 +35,10 @@ try:
     result=invoke(request('smoke'),factory)
     assert result=={'ready':True}
     assert calls and all(not tools for _,tools in calls)
-    print(json.dumps({'status':'PASS','real_hermes':True,'model_endpoint':'FAKE_HTTP','calls':calls,'result':result}))
+    chat=[body for path,body in requests if path.endswith('/chat/completions')]
+    assert chat and all(body.get('response_format') == {'type':'json_object'} for body in chat)
+    assert all(any(m['role']=='system' and 'You are a JSON proposal component' in str(m.get('content')) for m in body['messages']) for body in chat)
+    print(json.dumps({'json_format_verified':True,'system_schema_verified':True,'status':'PASS','real_hermes':True,'model_endpoint':'FAKE_HTTP','calls':calls,'result':result}))
 finally:
     server.shutdown()
     probe_home.cleanup()

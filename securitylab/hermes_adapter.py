@@ -2,7 +2,8 @@
 import json
 from pathlib import Path
 import uuid
-from .ai_contract import HERMES_REVISION, MODEL, MODEL_DIGEST, digest, prompt, strict_json, validate_proposal
+import sys
+from .ai_contract import HERMES_REVISION, MODEL, MODEL_DIGEST, digest, prompt, strict_json, validate_proposal, request
 from .container_runner import IMAGE_ID
 from .policy import Limits, PolicyError
 from .process import execute
@@ -30,6 +31,30 @@ def validate_envelope(req, value):
     return proposal
 
 
+class ProposalRejected(PolicyError):
+    def __init__(self, message, previous):
+        super().__init__(message)
+        self.previous = previous
+        self.cleanup_passed = False
+
+
+def rejected_reply(stderr, role, attempt):
+    raw = decision = None
+    for line in stderr.splitlines():
+        try:
+            if line.startswith('AI_RESPONSE_JSON='):
+                raw = json.loads(line[len('AI_RESPONSE_JSON='):])
+            if line.startswith('AI_ATTEMPT_JSON='):
+                decision = json.loads(line[len('AI_ATTEMPT_JSON='):])
+        except ValueError:
+            return None
+    if (isinstance(raw, str) and len(raw.encode('utf-8')) <= 16000
+        and isinstance(decision, dict) and decision.get('role') == role
+        and decision.get('attempt') == attempt and decision.get('status') == 'REJECTED'):
+        return raw
+    return None
+
+
 class HermesAdapter:
     def __init__(self, cwd, output, executor=execute):
         self.cwd, self.output, self.execute = Path(cwd).resolve(), Path(output), executor
@@ -54,14 +79,27 @@ class HermesAdapter:
 
     def ask(self, req, stop=lambda: False):
         prompt(req)
+        try:
+            return self._ask_once(req, stop)
+        except ProposalRejected as exc:
+            if req['role'] != 'blue' or 'retry' in req or not exc.cleanup_passed or stop():
+                raise
+            print('Blue: proposal rejected; starting final corrective attempt.', file=sys.stderr, flush=True)
+            return self._ask_once(request('blue', req['finding'], exc.previous), stop)
+
+    def _ask_once(self, req, stop):
+        prompt(req)
+        attempt = 2 if 'retry' in req else 1
+        print(f"{req['role']}: attempt {attempt}, timeout 300 seconds", file=sys.stderr, flush=True)
         identity = uuid.uuid4().hex
         name = 'securitylab-ai-' + identity
         path = self.output / (identity + '.json')
         record = {'id': identity, 'role': req['role'], 'request_sha256': digest(req), 'image_id': self.image,
-                  'container': name, 'status': 'BLOCKED', 'cleanup': 'NOT_TESTED',
+                  'container': name, 'attempt': attempt, 'status': 'BLOCKED', 'cleanup': 'NOT_TESTED',
                   'trust': 'AI proposal, not vulnerability evidence'}
         atomic_text(path, json.dumps(record, indent=2))
         attempted = False
+        failure = None
         try:
             if stop():
                 raise PolicyError('AI call cancelled')
@@ -90,6 +128,17 @@ class HermesAdapter:
             record['execution'] = result.data()
             state = json.loads(self.call(['inspect', '--format', '{{json .State}}', name]).stdout)
             record['container_state'] = state
+            reason = ('TIMEOUT' if result.timed_out else 'CANCELLED' if result.cancelled
+                      else 'OUTPUT_LIMIT' if result.truncated else 'RESOURCE_LIMIT' if state.get('OOMKilled') else None)
+            if reason:
+                record['status'] = reason
+                raise PolicyError(f"{req['role']} attempt {attempt}: {reason} after {result.duration}s")
+            if (result.returncode == 2 and state.get('Running') is False and state.get('ExitCode') == 2
+                and state.get('OOMKilled') is False and not state.get('Error')):
+                previous = rejected_reply(result.stderr, req['role'], attempt)
+                if previous is not None and req['role'] == 'blue':
+                    record['status'] = 'REJECTED'
+                    raise ProposalRejected(f"Blue attempt {attempt}: proposal rejected; see call receipt {path}", previous)
             if (not result.passed or state.get('Running') is not False or state.get('OOMKilled') is not False
                 or state.get('Error') or type(state.get('ExitCode')) is not int or state['ExitCode'] != 0):
                 raise PolicyError('Hermes failed/interrupted: ' + result.stderr[-1500:])
@@ -100,6 +149,7 @@ class HermesAdapter:
             record['status'] = 'CANCELLED'
             raise
         except Exception as exc:
+            failure = exc
             record['error'] = str(exc)[:2000]
             raise
         finally:
@@ -112,6 +162,8 @@ class HermesAdapter:
                     record['cleanup'], record['cleanup_error'] = 'FAIL', str(exc)[:1000]
             else:
                 record['cleanup'] = 'PASS'
+            if isinstance(failure, ProposalRejected):
+                failure.cleanup_passed = record['cleanup'] == 'PASS'
             atomic_text(path, json.dumps(record, ensure_ascii=False, indent=2))
         if record['cleanup'] != 'PASS':
             raise PolicyError('Hermes cleanup failed')

@@ -34,7 +34,7 @@ def run_ai(store, smoke=False, adapter_factory=HermesAdapter, engine_factory=Orc
                 validate_proposal('blue', blue)
                 if red_call['response']['model_digest'] != blue_call['response']['model_digest']:
                     raise PolicyError('Model changed between Red and Blue')
-                summary.update(blue=blue, calls=[red_call['id'], blue_call['id']],
+                summary.update(blue=blue, blue_attempts=blue_call.get('attempt', 1), calls=[red_call['id'], blue_call['id']],
                                proposal_sha256=digest(blue), canonicalization='AST-equivalent to reviewed FIXED')
                 # Only after the AI gate passed: execute the equivalent reviewed fixture,
                 # retaining the S3 no-AI mode truthfully for this child verification run.
