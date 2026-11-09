@@ -10,13 +10,16 @@ from .report import report
 from .storage import atomic_text, worker_lock
 
 
-def run_ai(store, smoke=False, adapter_factory=HermesAdapter, engine_factory=Orchestrator):
+def run_ai(store, smoke=False, adapter_factory=HermesAdapter, engine_factory=Orchestrator,
+           *, candidate=False, verifier=None):
     aid = uuid.uuid4().hex
     directory = store.root / 'ai' / aid
     directory.mkdir(parents=True, exist_ok=True)
     summary = {'id': aid, 'mode': 'hermes-smoke' if smoke else 'hermes-constrained-fixture',
                'status': 'BLOCKED', 'verification_run': None, 'finding_status': None,
                'scope': 'Known synthetic fixture only; AI proposals are not evidence'}
+    if candidate and not smoke:
+        summary['mode'] = 'hermes-actual-candidate-fixture'
     try:
         # One model task at a time. Separate lock avoids nesting the S3 queue lock.
         with worker_lock(store.root / 'ai'):
@@ -30,10 +33,22 @@ def run_ai(store, smoke=False, adapter_factory=HermesAdapter, engine_factory=Orc
                 validate_proposal('red', red)
                 summary['red'] = red
                 atomic_text(directory / 'summary.json', json.dumps(summary, ensure_ascii=False, indent=2))
-                blue, blue_call = adapter.ask(request('blue', red))
-                validate_proposal('blue', blue)
+                blue, blue_call = adapter.ask(request('blue', red, candidate=candidate))
+                validate_proposal('blue', blue, candidate=candidate)
                 if red_call['response']['model_digest'] != blue_call['response']['model_digest']:
                     raise PolicyError('Model changed between Red and Blue')
+                if candidate:
+                    from .candidate_verifier import verify_candidate
+                    summary.update(blue=blue, blue_attempts=blue_call.get('attempt', 1),
+                                   calls=[red_call['id'], blue_call['id']], proposal_sha256=digest(blue))
+                    outcome = (verifier or verify_candidate)(blue['content'], store.root)
+                    summary.update(status=outcome['status'], finding_status=outcome['finding_status'],
+                                   verification_run=outcome['id'], verification_record=outcome['record'],
+                                   source_sha256=outcome['source_sha256'],
+                                   canonicalization='NONE: verification targets original candidate bytes after bounded-language admission')
+                    if 'error' in outcome:
+                        summary['error'] = outcome['error']
+                    return summary
                 summary.update(blue=blue, blue_attempts=blue_call.get('attempt', 1), calls=[red_call['id'], blue_call['id']],
                                proposal_sha256=digest(blue),
                                reviewed_variant=reviewed_variant(blue['content']),

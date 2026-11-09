@@ -1,0 +1,24 @@
+test_corrective_attempt_preserves_candidate_mode (test_candidate.CandidateIntegrationTests.test_corrective_attempt_preserves_candidate_mode) ... blue: attempt 1, timeout 300 seconds
+Blue: proposal rejected; starting final corrective attempt.
+blue: attempt 2, timeout 300 seconds
+ok
+test_old_receipt_tamper_prevents_success (test_candidate.CandidateIntegrationTests.test_old_receipt_tamper_prevents_success) ... ok
+test_saved_summary_cli_without_model (test_candidate.CandidateIntegrationTests.test_saved_summary_cli_without_model) ... ok
+test_worker_and_envelope_admit_noncanonical_proposal (test_candidate.CandidateIntegrationTests.test_worker_and_envelope_admit_noncanonical_proposal) ... AI_ATTEMPT_JSON={"role": "blue", "attempt": 1, "status": "ADMITTED"}
+ok
+test_actual_alternative_bytes_and_three_receipts (test_candidate.CandidateTests.test_actual_alternative_bytes_and_three_receipts) ... ok
+test_ai_workflow_candidate_mode (test_candidate.CandidateTests.test_ai_workflow_candidate_mode) ... ok
+test_alternative_admitted_but_old_gate_rejects (test_candidate.CandidateTests.test_alternative_admitted_but_old_gate_rejects) ... ok
+test_crash_not_fix (test_candidate.CandidateTests.test_crash_not_fix) ... ok
+test_module_and_signature_changes_denied (test_candidate.CandidateTests.test_module_and_signature_changes_denied) ... ok
+test_policy_failure_never_constructs_broker (test_candidate.CandidateTests.test_policy_failure_never_constructs_broker) ... ok
+test_request_mode_is_bound (test_candidate.CandidateTests.test_request_mode_is_bound) ... ok
+test_restricted_language_denies_side_effects (test_candidate.CandidateTests.test_restricted_language_denies_side_effects) ... ok
+test_transport_and_binding_failures (test_candidate.CandidateTests.test_transport_and_binding_failures) ... ok
+test_unchanged_and_regression_fail (test_candidate.CandidateTests.test_unchanged_and_regression_fail) ... ok
+test_wrong_code_is_admitted_for_behavioral_testing (test_candidate.CandidateTests.test_wrong_code_is_admitted_for_behavioral_testing) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.694s
+
+OK

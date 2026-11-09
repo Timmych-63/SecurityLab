@@ -27,7 +27,7 @@ def validate_envelope(req, value):
         if not isinstance(proposal, dict) or proposal != {'ready': True} or type(proposal['ready']) is not bool:
             raise PolicyError('Invalid model smoke reply')
     else:
-        validate_proposal(req['role'], proposal)
+        validate_proposal(req['role'], proposal, candidate=req.get('verification') == 'actual-candidate-v1')
     return proposal
 
 
@@ -85,7 +85,8 @@ class HermesAdapter:
             if req['role'] != 'blue' or 'retry' in req or not exc.cleanup_passed or stop():
                 raise
             print('Blue: proposal rejected; starting final corrective attempt.', file=sys.stderr, flush=True)
-            return self._ask_once(request('blue', req['finding'], exc.previous), stop)
+            return self._ask_once(request('blue', req['finding'], exc.previous,
+                                         candidate=req.get('verification') == 'actual-candidate-v1'), stop)
 
     def _ask_once(self, req, stop):
         prompt(req)

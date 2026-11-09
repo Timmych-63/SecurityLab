@@ -41,11 +41,11 @@ def invoke(req, agent_class, capture=None):
             if value != {'ready': True} or type(value['ready']) is not bool:
                 raise PolicyError('Smoke response invalid')
         else:
-            validate_proposal(req['role'], value)
+            validate_proposal(req['role'], value, candidate=req.get('verification') == 'actual-candidate-v1')
     except PolicyError as exc:
         print('AI_ATTEMPT_JSON=' + json.dumps({'role': req['role'], 'attempt': attempt,
               'status': 'REJECTED', 'reason': str(exc),
-              'feedback': blue_feedback(value) if req['role'] == 'blue' else [str(exc)]}), file=sys.stderr)
+              'feedback': blue_feedback(value, candidate=req.get('verification') == 'actual-candidate-v1') if req['role'] == 'blue' else [str(exc)]}), file=sys.stderr)
         raise
     print('AI_ATTEMPT_JSON=' + json.dumps({'role': req['role'], 'attempt': attempt,
           'status': 'ADMITTED'}), file=sys.stderr)

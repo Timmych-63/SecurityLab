@@ -57,7 +57,7 @@ def strict_json(text):
     return result
 
 
-def validate_proposal(role, value):
+def validate_proposal(role, value, *, candidate=False):
     if not isinstance(value, dict):
         raise PolicyError('Proposal must be an object')
     if role == 'red':
@@ -78,13 +78,17 @@ def validate_proposal(role, value):
         source = value['content']
         if not isinstance(source, str) or len(source.encode('utf-8')) > 12000:
             raise PolicyError('Invalid patch size')
-        reviewed_variant(source)
+        if candidate:
+            from .candidate_policy import validate_candidate
+            validate_candidate(source)
+        else:
+            reviewed_variant(source)
     else:
         raise PolicyError('Unknown AI role')
     return value
 
 
-def blue_feedback(value):
+def blue_feedback(value, *, candidate=False):
     """Static diagnostics only. Never execute or repair model code."""
     notes = []
     if not isinstance(value, dict) or set(value) != {'file', 'content'} or value.get('file') != 'service.py':
@@ -92,6 +96,13 @@ def blue_feedback(value):
     source = value.get('content')
     if not isinstance(source, str) or len(source.encode('utf-8')) > 12000:
         return ['Return a complete module of at most 12000 UTF-8 bytes.']
+    if candidate:
+        from .candidate_policy import validate_candidate
+        try:
+            validate_candidate(source)
+        except PolicyError as exc:
+            return [str(exc), 'Keep RECORDS and the function signature unchanged. Use local record/owner assignments, if, return, comparisons and RECORDS.get(record_id). No imports, output, loops, extra calls or mutation. Correctness is checked independently.']
+        return ['Candidate is admitted for independent behavioral verification, not certified correct.']
     try:
         tree = ast.parse(source)
     except (SyntaxError, ValueError, RecursionError):
@@ -107,10 +118,14 @@ def blue_feedback(value):
     return notes
 
 
-def request(role, finding=None, retry=None):
+def request(role, finding=None, retry=None, *, candidate=False):
     if role not in {'red', 'blue', 'smoke'}:
         raise PolicyError('Unknown role')
     result = {'schema_version': 1, 'role': role}
+    if type(candidate) is not bool or (candidate and role != 'blue'):
+        raise PolicyError('Invalid candidate mode')
+    if candidate:
+        result['verification'] = 'actual-candidate-v1'
     if role != 'smoke':
         result['source'] = VULNERABLE
     if role == 'blue':
@@ -124,7 +139,7 @@ def request(role, finding=None, retry=None):
 
 def prompt(req):
     role = req.get('role')
-    if type(req.get('schema_version')) is not int or req != request(role, req.get('finding'), req.get('retry')):
+    if type(req.get('schema_version')) is not int or req != request(role, req.get('finding'), req.get('retry'), candidate=req.get('verification') == 'actual-candidate-v1'):
         raise PolicyError('Request differs from supported exercise')
     if role == 'smoke':
         return 'Return exactly this JSON object, no other text: {"ready":true}'
@@ -150,7 +165,7 @@ def prompt(req):
             previous = strict_json(req['retry'])
         except PolicyError:
             previous = None
-        query += '\nCorrect the rejected previous response once. Static feedback: ' + json.dumps(blue_feedback(previous))
+        query += '\nCorrect the rejected previous response once. Static feedback: ' + json.dumps(blue_feedback(previous, candidate=req.get('verification') == 'actual-candidate-v1'))
     return query
 
 

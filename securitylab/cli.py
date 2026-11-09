@@ -19,7 +19,10 @@ def main(argv=None):
     sub.add_parser('init')
     sub.add_parser('doctor')
     sub.add_parser('ai-smoke')
-    sub.add_parser('ai-demo')
+    ai = sub.add_parser('ai-demo')
+    ai.add_argument('--verify-candidate', action='store_true', help='S5: execute actual bounded fixture proposal')
+    candidate = sub.add_parser('candidate-check')
+    candidate.add_argument('--summary', type=Path, required=True, help='Saved AI summary containing blue proposal')
     demo = sub.add_parser('demo')
     demo.add_argument('--enqueue', action='store_true')
     demo.add_argument('--executor', choices=['local', 'docker'], default='local')
@@ -52,7 +55,19 @@ def main(argv=None):
         engine = Orchestrator(store, limits)
         if args.command in {'ai-smoke', 'ai-demo'}:
             from .ai_workflow import run_ai
-            result = run_ai(store, smoke=args.command == 'ai-smoke')
+            result = run_ai(store, smoke=args.command == 'ai-smoke', candidate=getattr(args, 'verify_candidate', False))
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0 if result['status'] == 'PASS' else 2
+        if args.command == 'candidate-check':
+            from .ai_contract import strict_json, validate_proposal
+            from .candidate_verifier import verify_candidate
+            with args.summary.open('rb') as handle:
+                raw = handle.read(32769)
+            saved = strict_json(raw.decode('utf-8'))
+            blue = validate_proposal('blue', saved.get('blue'), candidate=True)
+            (store.root / 'ai').mkdir(parents=True, exist_ok=True)
+            with worker_lock(store.root / 'ai'):
+                result = verify_candidate(blue['content'], store.root, limits=limits)
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0 if result['status'] == 'PASS' else 2
         if args.command == 'init':
