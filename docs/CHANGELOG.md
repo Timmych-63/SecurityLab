@@ -1,3 +1,10 @@
+# S6.3b (2026-11-09) — two-container HTTP observation
+
+- Restricted opt-in `repo http-probe` for single-file Python stdlib HTTP API on port 8000.
+- Ephemeral internal Docker network, independent fixed-script HTTP verifier container, no host ports/mounts, source via stdin, pinned image, host-checked cleanup and receipts.
+- Explicit path/status contract and safe `NOT_EVALUATED` statuses; generic `scan` still blocked.
+- Two different fixture repos, 17 new local tests including independent loopback HTTP verifier test. Windows two-container acceptance pending.
+
 ## S6.3a — guarded standalone Python Docker probe
 - Opt-in `repo probe` runs one SHA-256-verified Python source file in existing DockerBroker; no host execution or dependency installation.
 - Audits pinned receipt and cleanup; `NOT_EVALUATED` security verdict always, `scan` disabled.

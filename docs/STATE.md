@@ -1,3 +1,7 @@
+# Latest S6.3b checkpoint (2026-11-09)
+
+S6.3a accepted on user Windows: 12/12 probe tests, actual Docker standalone execution, cleanup PASS. S6.3b adds independent two-container Python stdlib HTTP contract with private Docker internal network and no security verdict. Local focused tests PASS; real Windows/Docker HTTP test pending. See `docs/S6_3b.md`.
+
 # Latest S6.3a checkpoint (2026-11-09)
 
 S6.2.2 18 snapshot tests confirmed on user Windows. S6.3a adds opt-in single-file Python Docker probe; only mock-transport tests locally (12); live Windows S6.3a not yet confirmed. Not a security scan. See docs/S6_3a.md.
