@@ -90,6 +90,23 @@ class WorkflowTests(unittest.TestCase):
         result=run_ai(self.store,False,Adapter,lambda s:Orchestrator(s,docker_broker_factory=FixtureBroker))
         self.assertEqual(result['status'],'PASS',result);self.assertEqual(Adapter.calls,['red','blue']);self.assertEqual(result['finding_status'],'FIXED')
         self.assertEqual(self.store.get(result['verification_run'])['mode'],'scripted-demo-docker-no-ai')
+    def test_owner_variable_workflow_reports_canonicalization(self):
+        from securitylab.ai_contract import REVIEWED_FIXES
+        from test_docker_workflow import FixtureBroker
+        from securitylab.orchestrator import Orchestrator
+        class OwnerAdapter(Adapter):
+            def ask(self, req):
+                value, call = super().ask(req)
+                if req['role'] == 'blue':
+                    value['content'] = REVIEWED_FIXES['local-owner-user-first']
+                    call['response'] = envelope(req, value)
+                return value, call
+        result = run_ai(self.store, False, OwnerAdapter,
+                        lambda s: Orchestrator(s, docker_broker_factory=FixtureBroker))
+        self.assertEqual(result['status'], 'PASS', result)
+        self.assertEqual(result['reviewed_variant'], 'local-owner-user-first')
+        self.assertIn('original proposal not executed', result['canonicalization'])
+        self.assertIn('owner = record', result['blue']['content'])
 
 from securitylab.process import Result
 from securitylab.hermes_adapter import HermesAdapter

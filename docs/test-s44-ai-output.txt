@@ -1,0 +1,25 @@
+.........blue: attempt 1, timeout 300 seconds
+..blue: attempt 1, timeout 300 seconds
+Blue: proposal rejected; starting final corrective attempt.
+blue: attempt 2, timeout 300 seconds
+.blue: attempt 1, timeout 300 seconds
+.blue: attempt 1, timeout 300 seconds
+Blue: proposal rejected; starting final corrective attempt.
+blue: attempt 2, timeout 300 seconds
+.AI_ATTEMPT_JSON={"role": "blue", "attempt": 1, "status": "ADMITTED"}
+..AI_ATTEMPT_JSON={"role": "red", "attempt": 1, "status": "REJECTED", "reason": "Expected one JSON object from AI", "feedback": ["Expected one JSON object from AI"]}
+.AI_ATTEMPT_JSON={"role": "red", "attempt": 1, "status": "REJECTED", "reason": "Red case must use an existing record and a different non-null caller: {\"user\": \"bob\", \"record_id\": \"two\"}", "feedback": ["Red case must use an existing record and a different non-null caller: {\"user\": \"bob\", \"record_id\": \"two\"}"]}
+..smoke: attempt 1, timeout 300 seconds
+smoke: attempt 1, timeout 300 seconds
+smoke: attempt 1, timeout 300 seconds
+smoke: attempt 1, timeout 300 seconds
+smoke: attempt 1, timeout 300 seconds
+.smoke: attempt 1, timeout 300 seconds
+.AI_ATTEMPT_JSON={"role": "smoke", "attempt": 1, "status": "ADMITTED"}
+AI_ATTEMPT_JSON={"role": "smoke", "attempt": 1, "status": "ADMITTED"}
+.AI_ATTEMPT_JSON={"role": "smoke", "attempt": 1, "status": "REJECTED", "reason": "Expected one JSON object from AI", "feedback": ["Expected one JSON object from AI"]}
+........
+----------------------------------------------------------------------
+Ran 30 tests in 1.630s
+
+OK

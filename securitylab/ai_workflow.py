@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 import uuid
-from .ai_contract import request, validate_proposal, digest
+from .ai_contract import request, validate_proposal, digest, reviewed_variant
 from .hermes_adapter import HermesAdapter
 from .orchestrator import Orchestrator
 from .policy import PolicyError
@@ -35,7 +35,9 @@ def run_ai(store, smoke=False, adapter_factory=HermesAdapter, engine_factory=Orc
                 if red_call['response']['model_digest'] != blue_call['response']['model_digest']:
                     raise PolicyError('Model changed between Red and Blue')
                 summary.update(blue=blue, blue_attempts=blue_call.get('attempt', 1), calls=[red_call['id'], blue_call['id']],
-                               proposal_sha256=digest(blue), canonicalization='AST-equivalent to reviewed FIXED')
+                               proposal_sha256=digest(blue),
+                               reviewed_variant=reviewed_variant(blue['content']),
+                               canonicalization='Reviewed fixture variant mapped to canonical FIXED; original proposal not executed')
                 # Only after the AI gate passed: execute the equivalent reviewed fixture,
                 # retaining the S3 no-AI mode truthfully for this child verification run.
                 rid = store.create('scripted-demo-docker-no-ai')

@@ -9,6 +9,31 @@ HERMES_REVISION = 'e075441241b8d626789b4aae0e376f86eabf824d'
 MODEL = 'qwen3.5:2b'
 MODEL_DIGEST = '0689d44085e06d165161a8a9a1731344278cfb5aade63a3c3dbdb48ab54b130a'
 
+# Finite reviewed templates, not a general semantic-equivalence checker.
+# Valid only for this fixture's built-in string owners and unchanged RECORDS.
+REVIEWED_FIXES = {
+    'direct-owner-first': FIXED,
+    'direct-user-first': FIXED.replace('record["owner"] != user', 'user != record["owner"]'),
+    'local-owner-user-first': FIXED.replace(
+        '    if record["owner"] != user:',
+        '    owner = record["owner"]\n    if user != owner:'),
+    'local-owner-owner-first': FIXED.replace(
+        '    if record["owner"] != user:',
+        '    owner = record["owner"]\n    if owner != user:'),
+}
+
+
+def reviewed_variant(source):
+    """Identify a complete reviewed module without executing model code."""
+    try:
+        actual = ast.dump(ast.parse(source), include_attributes=False)
+    except (SyntaxError, ValueError, RecursionError) as exc:
+        raise PolicyError('Invalid Python proposal') from exc
+    for name, template in REVIEWED_FIXES.items():
+        if actual == ast.dump(ast.parse(template), include_attributes=False):
+            return name
+    raise PolicyError('NEEDS_REVIEW: patch is outside the reviewed fixture AST; nothing executed')
+
 
 def strict_json(text):
     if not isinstance(text, str) or len(text.encode('utf-8')) > 32768:
@@ -53,13 +78,7 @@ def validate_proposal(role, value):
         source = value['content']
         if not isinstance(source, str) or len(source.encode('utf-8')) > 12000:
             raise PolicyError('Invalid patch size')
-        try:
-            actual = ast.dump(ast.parse(source), include_attributes=False)
-            expected = ast.dump(ast.parse(FIXED), include_attributes=False)
-        except (SyntaxError, ValueError, RecursionError) as exc:
-            raise PolicyError('Invalid Python proposal') from exc
-        if actual != expected:
-            raise PolicyError('NEEDS_REVIEW: patch is outside the reviewed fixture AST; nothing executed')
+        reviewed_variant(source)
     else:
         raise PolicyError('Unknown AI role')
     return value
@@ -84,7 +103,7 @@ def blue_feedback(value):
     functions = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'read_record']
     if len(functions) != 1 or [dump(n) for n in functions[0].body[:3]] != [dump(n) for n in original.body[1].body[:3]]:
         notes.append('Preserve the original first three function statements in order: reject None user with 401; assign record = RECORDS.get(record_id); reject None record with 404. Do not dereference owner before this missing-record guard.')
-    notes.append('Only add the ownership denial after those existing guards, returning 403, None for a different owner; preserve the original successful return. Do not refactor or add helpers/imports. Alternative ASTs require manual review in this exercise.')
+    notes.append('Only add the ownership denial after those existing guards, returning 403, None for a different owner; preserve the original successful return. Compare user and record["owner"] with != in either order, optionally assigning owner = record["owner"] immediately before that guard. Do not refactor or add helpers/imports. Other ASTs require manual review in this exercise.')
     return notes
 
 
