@@ -53,3 +53,8 @@
 - Confirmed user real Hermes/model smoke PASS; AI exercise blocked at Red.
 - Generalized synthetic Red caller/record validation; retain rejected raw responses.
 - Clarified literal-value prompt and added four regression tests.
+
+## S4.2
+- Added static Blue diagnostics and one fresh corrective conversation after rejected output.
+- Preserve both attempts and feedback, share existing time budget, retain AST/S3 gates.
+- Improved complete-module prompt; no retry on forbidden tools/provider failure.

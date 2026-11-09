@@ -1,0 +1,135 @@
+test_exhausted_budget_prevents_second_call (test_ai.BlueRetryTests.test_exhausted_budget_prevents_second_call) ... AI_ATTEMPT_JSON={"role": "blue", "attempt": 1, "status": "REJECTED", "reason": "Expected one JSON object from AI", "feedback": ["Return only file=service.py and content containing the entire Python module."]}
+ok
+test_malformed_json_can_be_corrected (test_ai.BlueRetryTests.test_malformed_json_can_be_corrected) ... AI_ATTEMPT_JSON={"role": "blue", "attempt": 1, "status": "REJECTED", "reason": "Expected one JSON object from AI", "feedback": ["Return only file=service.py and content containing the entire Python module."]}
+AI_ATTEMPT_JSON={"role": "blue", "attempt": 2, "status": "ADMITTED"}
+ok
+test_real_failed_patch_gets_feedback_then_corrected (test_ai.BlueRetryTests.test_real_failed_patch_gets_feedback_then_corrected) ... ok
+test_two_rejections_stop_without_auto_fix (test_ai.BlueRetryTests.test_two_rejections_stop_without_auto_fix) ... AI_ATTEMPT_JSON={"role": "blue", "attempt": 1, "status": "REJECTED", "reason": "NEEDS_REVIEW: patch is outside the reviewed fixture AST; nothing executed", "feedback": ["The complete original RECORDS assignment must be preserved unchanged at module level.", "Preserve the original first three function statements in order: reject None user with 401; assign record = RECORDS.get(record_id); reject None record with 404. Do not dereference owner before this missing-record guard.", "Only add the ownership denial after those existing guards, returning 403, None for a different owner; preserve the original successful return. Do not refactor or add helpers/imports. Alternative ASTs require manual review in this exercise."]}
+AI_ATTEMPT_JSON={"role": "blue", "attempt": 2, "status": "REJECTED", "reason": "NEEDS_REVIEW: patch is outside the reviewed fixture AST; nothing executed", "feedback": ["The complete original RECORDS assignment must be preserved unchanged at module level.", "Preserve the original first three function statements in order: reject None user with 401; assign record = RECORDS.get(record_id); reject None record with 404. Do not dereference owner before this missing-record guard.", "Only add the ownership denial after those existing guards, returning 403, None for a different owner; preserve the original successful return. Do not refactor or add helpers/imports. Alternative ASTs require manual review in this exercise."]}
+ok
+test_unexpected_tools_are_not_retried (test_ai.BlueRetryTests.test_unexpected_tools_are_not_retried) ... ok
+test_valid_first_attempt_not_repeated (test_ai.BlueRetryTests.test_valid_first_attempt_not_repeated) ... AI_ATTEMPT_JSON={"role": "blue", "attempt": 1, "status": "ADMITTED"}
+ok
+test_bindings (test_ai.ContractTests.test_bindings) ... ok
+test_boolean (test_ai.ContractTests.test_boolean) ... ok
+test_formatting (test_ai.ContractTests.test_formatting) ... ok
+test_paths_and_success_claims (test_ai.ContractTests.test_paths_and_success_claims) ... ok
+test_request (test_ai.ContractTests.test_request) ... ok
+test_strict_json (test_ai.ContractTests.test_strict_json) ... ok
+test_unsafe_code (test_ai.ContractTests.test_unsafe_code) ... ok
+test_valid (test_ai.ContractTests.test_valid) ... ok
+test_wrong_finding (test_ai.ContractTests.test_wrong_finding) ... ok
+test_invalid_cases_are_denied (test_ai.RedRegressionTests.test_invalid_cases_are_denied) ... ok
+test_malformed_reply_is_also_captured (test_ai.RedRegressionTests.test_malformed_reply_is_also_captured) ... AI_ATTEMPT_JSON={"role": "red", "attempt": 1, "status": "REJECTED", "reason": "Expected one JSON object from AI", "feedback": ["Expected one JSON object from AI"]}
+ok
+test_rejected_raw_response_captured_before_validation (test_ai.RedRegressionTests.test_rejected_raw_response_captured_before_validation) ... AI_ATTEMPT_JSON={"role": "red", "attempt": 1, "status": "REJECTED", "reason": "Red case must use an existing record and a different non-null caller: {\"user\": \"bob\", \"record_id\": \"two\"}", "feedback": ["Red case must use an existing record and a different non-null caller: {\"user\": \"bob\", \"record_id\": \"two\"}"]}
+ok
+test_unknown_caller_cross_owner_is_valid (test_ai.RedRegressionTests.test_unknown_caller_cross_owner_is_valid) ... ok
+test_failures_never_produce_proposal (test_ai.TransportTests.test_failures_never_produce_proposal) ... ok
+test_roundtrip_cleanup (test_ai.TransportTests.test_roundtrip_cleanup) ... ok
+test_fresh_no_tools (test_ai.WorkerTests.test_fresh_no_tools) ... AI_ATTEMPT_JSON={"role": "smoke", "attempt": 1, "status": "ADMITTED"}
+AI_ATTEMPT_JSON={"role": "smoke", "attempt": 1, "status": "ADMITTED"}
+ok
+test_invalid_answer (test_ai.WorkerTests.test_invalid_answer) ... AI_ATTEMPT_JSON={"role": "smoke", "attempt": 1, "status": "REJECTED", "reason": "Expected one JSON object from AI", "feedback": ["Expected one JSON object from AI"]}
+ok
+test_tool_message (test_ai.WorkerTests.test_tool_message) ... ok
+test_tools_fail_closed (test_ai.WorkerTests.test_tools_fail_closed) ... ok
+test_failure_no_fallback (test_ai.WorkflowTests.test_failure_no_fallback) ... ok
+test_full_workflow (test_ai.WorkflowTests.test_full_workflow) ... ok
+test_rejected_patch_not_executed (test_ai.WorkflowTests.test_rejected_patch_not_executed) ... ok
+test_smoke_not_fixed (test_ai.WorkflowTests.test_smoke_not_fixed) ... ok
+test_binding_is_saved_outside_job_payload (test_container_runner.BrokerTests.test_binding_is_saved_outside_job_payload) ... ok
+test_cleanup_failure_overrides_success (test_container_runner.BrokerTests.test_cleanup_failure_overrides_success) ... ok
+test_completed_job_is_not_fixed (test_container_runner.BrokerTests.test_completed_job_is_not_fixed) ... ok
+test_exception_still_cleans (test_container_runner.BrokerTests.test_exception_still_cleans) ... ok
+test_exit_code_from_daemon (test_container_runner.BrokerTests.test_exit_code_from_daemon) ... ok
+test_image_lookup_does_not_require_existing_containers (test_container_runner.BrokerTests.test_image_lookup_does_not_require_existing_containers) ... ok
+test_implicit_volumes_rejected (test_container_runner.BrokerTests.test_implicit_volumes_rejected) ... ok
+test_intent_saved_before_create (test_container_runner.BrokerTests.test_intent_saved_before_create) ... ok
+test_invalid_job_does_not_create_container (test_container_runner.BrokerTests.test_invalid_job_does_not_create_container) ... ok
+test_oom_reported (test_container_runner.BrokerTests.test_oom_reported) ... ok
+test_output_limit_cleanup (test_container_runner.BrokerTests.test_output_limit_cleanup) ... ok
+test_remote_endpoint_rejected (test_container_runner.BrokerTests.test_remote_endpoint_rejected) ... ok
+test_stop_before_create_does_not_launch (test_container_runner.BrokerTests.test_stop_before_create_does_not_launch) ... ok
+test_timeout_cleanup (test_container_runner.BrokerTests.test_timeout_cleanup) ... ok
+test_transport_mismatch (test_container_runner.BrokerTests.test_transport_mismatch) ... ok
+test_unsafe_mount_prevents_start (test_container_runner.BrokerTests.test_unsafe_mount_prevents_start) ... ok
+test_bad_image_or_name_rejected (test_container_runner.ContractTests.test_bad_image_or_name_rejected) ... ok
+test_duplicate_json_keys (test_container_runner.ContractTests.test_duplicate_json_keys) ... ok
+test_missing_entry_wrong_type_and_version (test_container_runner.ContractTests.test_missing_entry_wrong_type_and_version) ... ok
+test_no_control_of_docker_args (test_container_runner.ContractTests.test_no_control_of_docker_args) ... ok
+test_path_and_case_collisions (test_container_runner.ContractTests.test_path_and_case_collisions) ... ok
+test_payload_bound (test_container_runner.ContractTests.test_payload_bound) ... ok
+test_shell_mount_and_image_fields_rejected (test_container_runner.ContractTests.test_shell_mount_and_image_fields_rejected) ... ok
+test_unicode_roundtrip (test_container_runner.ContractTests.test_unicode_roundtrip) ... ok
+test_blocked_stdin_is_timed_out (test_container_runner.StdinTransportTests.test_blocked_stdin_is_timed_out) ... ok
+test_oversize_input_rejected_before_process (test_container_runner.StdinTransportTests.test_oversize_input_rejected_before_process) ... ok
+test_utf8_payload_and_eof (test_container_runner.StdinTransportTests.test_utf8_payload_and_eof) ... ok
+test_changed_parsed_checks_rejected (test_docker_workflow.DockerWorkflowTests.test_changed_parsed_checks_rejected) ... ok
+test_copied_check_rejected (test_docker_workflow.DockerWorkflowTests.test_copied_check_rejected) ... ok
+test_edited_receipt_rejected (test_docker_workflow.DockerWorkflowTests.test_edited_receipt_rejected) ... ok
+test_failed_cleanup_cannot_confirm (test_docker_workflow.DockerWorkflowTests.test_failed_cleanup_cannot_confirm) ... ok
+test_full_workflow_uses_five_distinct_bound_checks (test_docker_workflow.DockerWorkflowTests.test_full_workflow_uses_five_distinct_bound_checks) ... ok
+test_keyboard_cancel_is_recorded_as_stopped (test_docker_workflow.DockerWorkflowTests.test_keyboard_cancel_is_recorded_as_stopped) ... ok
+test_local_job_after_docker_job_does_not_reuse_docker_runner (test_docker_workflow.DockerWorkflowTests.test_local_job_after_docker_job_does_not_reuse_docker_runner) ... ok
+test_malformed_check_map_is_not_confirmed (test_docker_workflow.DockerWorkflowTests.test_malformed_check_map_is_not_confirmed) ... ok
+test_missing_receipt_rejected (test_docker_workflow.DockerWorkflowTests.test_missing_receipt_rejected) ... ok
+test_mode_persists_and_resume_runs_only_remaining_checks (test_docker_workflow.DockerWorkflowTests.test_mode_persists_and_resume_runs_only_remaining_checks) ... ok
+test_no_docker_does_not_fall_back_to_host (test_docker_workflow.DockerWorkflowTests.test_no_docker_does_not_fall_back_to_host) ... ok
+test_receipt_tamper_before_final_validation_needs_review (test_docker_workflow.DockerWorkflowTests.test_receipt_tamper_before_final_validation_needs_review) ... ok
+test_stdout_claim_without_receipts_rejected (test_docker_workflow.DockerWorkflowTests.test_stdout_claim_without_receipts_rejected) ... ok
+test_stop_reaches_broker_and_task_stops (test_docker_workflow.DockerWorkflowTests.test_stop_reaches_broker_and_task_stops) ... ok
+test_unrecognized_mode_rejected (test_docker_workflow.DockerWorkflowTests.test_unrecognized_mode_rejected) ... ok
+test_untrusted_source_never_sent_to_broker (test_docker_workflow.DockerWorkflowTests.test_untrusted_source_never_sent_to_broker) ... ok
+test_wrong_payload_before_confirmation_blocked (test_docker_workflow.DockerWorkflowTests.test_wrong_payload_before_confirmation_blocked) ... ok
+test_wrong_run_rejected (test_docker_workflow.DockerWorkflowTests.test_wrong_run_rejected) ... ok
+test_expected_configuration (test_sandbox_check.SandboxChecks.test_expected_configuration) ... ok
+test_larger_limits_fail (test_sandbox_check.SandboxChecks.test_larger_limits_fail) ... ok
+test_malformed_limits_fail (test_sandbox_check.SandboxChecks.test_malformed_limits_fail) ... ok
+test_missing_observation_is_blocked (test_sandbox_check.SandboxChecks.test_missing_observation_is_blocked) ... ok
+test_mount_parser_matches_exact_mount (test_sandbox_check.SandboxChecks.test_mount_parser_matches_exact_mount) ... ok
+test_timeout_not_proof_of_isolation (test_sandbox_check.SandboxChecks.test_timeout_not_proof_of_isolation) ... ok
+test_unsafe_observations_fail (test_sandbox_check.SandboxChecks.test_unsafe_observations_fail) ... ok
+test_unknown_and_boolean_values_rejected (test_securitylab.ConfigurationTests.test_unknown_and_boolean_values_rejected) ... ok
+test_valid_configuration (test_securitylab.ConfigurationTests.test_valid_configuration) ... ok
+test_invalid_limits (test_securitylab.PolicyTests.test_invalid_limits) ... ok
+test_path_traversal_and_git_paths_denied (test_securitylab.PolicyTests.test_path_traversal_and_git_paths_denied) ... ok
+test_roles_cannot_close_execute_or_merge (test_securitylab.PolicyTests.test_roles_cannot_close_execute_or_merge) ... ok
+test_symlink_escape_denied (test_securitylab.PolicyTests.test_symlink_escape_denied) ... ok
+test_unknown_id_rejected (test_securitylab.PolicyTests.test_unknown_id_rejected) ... ok
+test_cancel (test_securitylab.ProcessTests.test_cancel) ... ok
+test_output_bounded (test_securitylab.ProcessTests.test_output_bounded) ... ok
+test_stderr_and_nonzero (test_securitylab.ProcessTests.test_stderr_and_nonzero) ... ok
+test_timeout (test_securitylab.ProcessTests.test_timeout) ... ok
+test_actual_process_death_releases_lock_and_resumes (test_securitylab.RecoveryRollbackTests.test_actual_process_death_releases_lock_and_resumes) ... ok
+test_rollback_preserves_main_and_is_idempotent (test_securitylab.RecoveryRollbackTests.test_rollback_preserves_main_and_is_idempotent) ... ok
+test_rollback_refuses_unknown_changes (test_securitylab.RecoveryRollbackTests.test_rollback_refuses_unknown_changes) ... ok
+test_cli_end_to_end (test_securitylab.ReportCliTests.test_cli_end_to_end) ... ok
+test_html_escapes_findings_and_json_has_proofs (test_securitylab.ReportCliTests.test_html_escapes_findings_and_json_has_proofs) ... ok
+test_scan_fails_closed_without_touching_project (test_securitylab.ReportCliTests.test_scan_fails_closed_without_touching_project) ... ok
+test_baseline_crash_not_vulnerability (test_securitylab.ValidatorTests.test_baseline_crash_not_vulnerability) ... ok
+test_changed_main_rejected (test_securitylab.ValidatorTests.test_changed_main_rejected) ... ok
+test_changed_test_rejected (test_securitylab.ValidatorTests.test_changed_test_rejected) ... ok
+test_dirty_worktree_rejected (test_securitylab.ValidatorTests.test_dirty_worktree_rejected) ... ok
+test_every_required_proof_is_required (test_securitylab.ValidatorTests.test_every_required_proof_is_required) ... ok
+test_false_success_zero_exit_not_enough (test_securitylab.ValidatorTests.test_false_success_zero_exit_not_enough) ... ok
+test_nonboolean_checks_rejected (test_securitylab.ValidatorTests.test_nonboolean_checks_rejected) ... ok
+test_rejects_model_claim_without_evidence (test_securitylab.ValidatorTests.test_rejects_model_claim_without_evidence) ... ok
+test_stale_commit_rejected (test_securitylab.ValidatorTests.test_stale_commit_rejected) ... ok
+test_timed_out_truncated_cancelled_rejected (test_securitylab.ValidatorTests.test_timed_out_truncated_cancelled_rejected) ... ok
+test_report_with_cp1251_default (test_securitylab.WindowsEncodingTests.test_report_with_cp1251_default) ... ok
+test_complete_proven_fix_and_main_untouched (test_securitylab.WorkflowTests.test_complete_proven_fix_and_main_untouched) ... ok
+test_events_export_recreated (test_securitylab.WorkflowTests.test_events_export_recreated) ... ok
+test_host_modified_code_denied (test_securitylab.WorkflowTests.test_host_modified_code_denied) ... ok
+test_illegal_transition_rollback (test_securitylab.WorkflowTests.test_illegal_transition_rollback) ... ok
+test_recover_partial_git_patch_before_state_commit (test_securitylab.WorkflowTests.test_recover_partial_git_patch_before_state_commit) ... ok
+test_reopen_database_and_idempotent_done (test_securitylab.WorkflowTests.test_reopen_database_and_idempotent_done) ... ok
+test_resume_after_each_stage (test_securitylab.WorkflowTests.test_resume_after_each_stage) ... ok
+test_retry_limit (test_securitylab.WorkflowTests.test_retry_limit) ... ok
+test_stop_and_retry (test_securitylab.WorkflowTests.test_stop_and_retry) ... ok
+test_worker_lock_excludes_second_process (test_securitylab.WorkflowTests.test_worker_lock_excludes_second_process) ... ok
+
+----------------------------------------------------------------------
+Ran 119 tests in 29.267s
+
+OK

@@ -79,3 +79,7 @@ Windows S4/live model/build: NOT TESTED pending user output.
 ## S4.1
 113 tests PASS (29.469s), test-s41-output.txt. Live S4.1 pending.
 User S4 real Hermes/model smoke PASS; full exercise blocked at Red before execution.
+
+## S4.2
+119 automated tests PASS (29.267s), test-s42-output.txt. Includes bounded Blue retry
+with scripted model responses; live model improvement/full cycle NOT TESTED.

@@ -148,3 +148,60 @@ class RedRegressionTests(unittest.TestCase):
         captured=[]
         with self.assertRaises(PolicyError):invoke(request('red'),InvalidAgent,captured.append)
         self.assertEqual(captured,['not JSON'])
+
+class BlueRetryTests(unittest.TestCase):
+    bad_source = '''def read_record(user, record_id):
+    if user is None:
+        return 401, None
+    owner = RECORDS.get(record_id)["owner"]
+    if user != owner:
+        return 403, None
+    record = RECORDS.get(record_id)
+    if record is None:
+        return 404, None
+    return 200, record["value"]
+'''
+    def factory(self, replies, queries, agents, tools=False):
+        class SequenceAgent:
+            def __init__(self, **kwargs):
+                self.tools=['terminal'] if tools else []
+                self.kwargs=kwargs; agents.append(self)
+            def run_conversation(self, **kwargs):
+                queries.append(kwargs['user_message'])
+                return {'final_response':replies.pop(0), 'messages':[]}
+        return SequenceAgent
+    def test_real_failed_patch_gets_feedback_then_corrected(self):
+        import contextlib,io
+        replies=[json.dumps(dict(BLUE,content=self.bad_source)),json.dumps(BLUE)]
+        queries=[];agents=[];captured=[];logs=io.StringIO()
+        with contextlib.redirect_stderr(logs):
+            result=invoke(request('blue',RED),self.factory(replies,queries,agents),captured.append)
+        self.assertEqual(result,BLUE);self.assertEqual(len(agents),2);self.assertEqual(len(captured),2)
+        self.assertIn('RECORDS assignment',queries[1]);self.assertIn('Do not dereference owner',queries[1])
+        self.assertIn('"status": "REJECTED"',logs.getvalue());self.assertIn('"attempt": 2',logs.getvalue())
+        self.assertLessEqual(agents[1].kwargs['run_budget_seconds'],agents[0].kwargs['run_budget_seconds'])
+        self.assertNotIn(FIXED,queries[1])
+    def test_two_rejections_stop_without_auto_fix(self):
+        queries=[];agents=[]
+        replies=[json.dumps(dict(BLUE,content=self.bad_source))]*3
+        with self.assertRaisesRegex(PolicyError,'after 2 attempt'):
+            invoke(request('blue',RED),self.factory(replies,queries,agents))
+        self.assertEqual(len(queries),2);self.assertEqual(len(replies),1)
+    def test_valid_first_attempt_not_repeated(self):
+        queries=[];agents=[]
+        invoke(request('blue',RED),self.factory([json.dumps(BLUE)],queries,agents))
+        self.assertEqual(len(agents),1)
+    def test_malformed_json_can_be_corrected(self):
+        queries=[];agents=[]
+        self.assertEqual(invoke(request('blue',RED),self.factory(['not JSON',json.dumps(BLUE)],queries,agents)),BLUE)
+    def test_unexpected_tools_are_not_retried(self):
+        queries=[];agents=[]
+        with self.assertRaises(PolicyError):invoke(request('blue',RED),self.factory([],queries,agents,tools=True))
+        self.assertEqual(len(agents),1);self.assertEqual(queries,[])
+    def test_exhausted_budget_prevents_second_call(self):
+        from unittest.mock import patch
+        queries=[];agents=[]
+        with patch('securitylab.hermes_worker.time.monotonic',side_effect=[0,0,241]):
+            with self.assertRaisesRegex(PolicyError,'time budget'):
+                invoke(request('blue',RED),self.factory(['not JSON'],queries,agents))
+        self.assertEqual(len(agents),1)

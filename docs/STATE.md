@@ -35,3 +35,10 @@ S4 build/model/inference accepted; full AI cycle BLOCKED at Red in run
 7b4972e37f7748908c658468e994babf. Original rejected response was not retained.
 S4.1 replaces the two-pair whitelist and logs rejected replies. See S4_1_RED_FIX.md.
 Next: cached Hermes rebuild then ai-demo only. Full cycle remains pending.
+
+## S4.2 current checkpoint
+User S4.1 run 5e36c06e6300438dbc0ac4e4ee1929d1 reached Blue. Invalid Blue
+proposal blocked before execution (missing RECORDS, owner read before 404 guard).
+S4.2 adds one bounded corrective retry, preserving strict AST/S3 checks and both replies.
+Same total role timeouts. Next: cached Hermes rebuild and ai-demo; no model download.
+Live full AI cycle still pending. See S4_2_BLUE_RETRY.md.
