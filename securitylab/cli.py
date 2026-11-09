@@ -38,6 +38,17 @@ def main(argv=None):
     rep.add_argument('--output', type=Path)
     scan = sub.add_parser('scan')
     scan.add_argument('project', type=Path)
+    sub.add_parser('profiles', help='List detection profiles (no execution profiles yet)')
+    repo = sub.add_parser('repo', help='S6.1 repository discovery, no project execution')
+    repo_sub = repo.add_subparsers(dest='repo_command', required=True)
+    for action in ('inspect', 'add'):
+        p = repo_sub.add_parser(action)
+        p.add_argument('path', type=Path)
+        if action == 'add':
+            p.add_argument('--name')
+    repo_sub.add_parser('list')
+    show = repo_sub.add_parser('show')
+    show.add_argument('project_id')
     args = parser.parse_args(argv)
     if args.command == 'doctor':
         print(json.dumps({'python': sys.version.split()[0], 'core': 'PASS',
@@ -48,6 +59,26 @@ def main(argv=None):
     if args.command == 'scan':
         print('BLOCKED: arbitrary repository execution needs a verified isolated runner and live AI integration. No project files changed.', file=sys.stderr)
         return 2
+    if args.command == 'profiles':
+        from .repository import PROFILES
+        print(json.dumps({'profiles': PROFILES, 'scan': 'DISABLED', 'execution': 'DISABLED'},
+                         ensure_ascii=False, indent=2))
+        return 0
+    if args.command == 'repo' and args.repo_command == 'inspect':
+        from .repository import inventory_repository
+        try:
+            print(json.dumps(inventory_repository(args.path), ensure_ascii=False, indent=2))
+            return 0
+        except (PolicyError, OSError) as exc:
+            print(f'ERROR: {exc}', file=sys.stderr)
+            return 2
+    if args.command == 'repo' and args.repo_command == 'add':
+        from .projects import assert_state_outside_project
+        try:
+            assert_state_outside_project(args.state, args.path)
+        except (PolicyError, OSError) as exc:
+            print(f'ERROR: {exc}', file=sys.stderr)
+            return 2
     store = None
     try:
         limits = load_limits(args.config)
@@ -70,7 +101,15 @@ def main(argv=None):
                 result = verify_candidate(blue['content'], store.root, limits=limits)
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0 if result['status'] == 'PASS' else 2
-        if args.command == 'init':
+        if args.command == 'repo':
+            from .projects import add_project, list_projects, project_detail
+            if args.repo_command == 'add':
+                result = add_project(store, args.path, args.name)
+            elif args.repo_command == 'list':
+                result = list_projects(store)
+            else:
+                result = project_detail(store, args.project_id)
+        elif args.command == 'init':
             result = {'state': str(store.root), 'schema_version': 1}
         elif args.command == 'demo':
             rid = store.create("scripted-demo-docker-no-ai" if args.executor == "docker" else "scripted-demo-no-ai")

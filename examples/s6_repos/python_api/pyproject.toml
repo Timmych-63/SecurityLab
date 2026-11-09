@@ -1,0 +1,4 @@
+[project]
+name = "s6-example-python-api"
+version = "0.1.0"
+dependencies = ["fastapi>=0.100"]

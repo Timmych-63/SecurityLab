@@ -20,6 +20,10 @@ class Store:
         self.db.execute("PRAGMA foreign_keys=ON")
         self.db.execute("PRAGMA synchronous=FULL")
         self.db.executescript('''
+        CREATE TABLE IF NOT EXISTS projects(
+          id TEXT PRIMARY KEY, name TEXT NOT NULL, source_path TEXT NOT NULL,
+          metadata_fingerprint TEXT NOT NULL, inventory_json TEXT NOT NULL,
+          created REAL NOT NULL);
         CREATE TABLE IF NOT EXISTS meta(version INTEGER NOT NULL);
         INSERT INTO meta SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM meta);
         CREATE TABLE IF NOT EXISTS runs(

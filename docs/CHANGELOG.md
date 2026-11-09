@@ -63,3 +63,13 @@
 - Separate Blue containers/time budgets with cleanup before correction.
 - JSON response mode and system-level schema, verified on real Hermes API/fake server.
 - Explicit timeout/resource/cancellation/output-limit diagnostics and console progress.
+
+## S6.1 — 2026-11-09
+- Добавлена самостоятельная read-only инвентаризация произвольного локального
+  репозитория с лимитами и распознаванием нескольких стеков и сервисов.
+- Добавлен реестр проектов в SQLite и CLI `repo inspect/add/list/show`;
+  сохранено совместимое `meta.version=1` (добавлена новая таблица).
+- Профили здесь только для обнаружения, без разрешения исполнения; `scan`
+  остаётся BLOCKED. Нет передачи исходников модели.
+- Добавлены 22 новых unit/негативных теста и три учебных разных проекта.
+- Актуальные команды и ограничения: `README_S6_1_RU.md`, `docs/S6_1.md`.

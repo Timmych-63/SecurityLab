@@ -1,0 +1,6 @@
+{
+  "name": "s6-example-node-api",
+  "private": true,
+  "scripts": {"test": "node --test", "start": "node src/app.js"},
+  "dependencies": {"express": "^4.21.0"}
+}
