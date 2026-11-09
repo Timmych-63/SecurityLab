@@ -1,3 +1,15 @@
+# S6.3d (2026-11-09) — bounded multi-file FastAPI profile
+
+- Windows S6.3c accepted: 10 tests, real 200/404 HTTP checks, Docker cleanup PASS.
+- Added explicit `repo fastapi-package-probe` for one verified service directory
+  containing up to 31 importable UTF-8 Python modules (with package `__init__.py`).
+- Job schema v2 supports safe nested `.py` paths; schema v1 remains intact.
+- Reuses pinned FastAPI image, independent verifier, image/receipt checks,
+  Docker isolation; no dependency resolution from untrusted projects.
+- 17 new and 106 prior selected tests PASS locally (mock Docker); Windows S6.3d pending.
+- Requires rebuilding demo and FastAPI images to update the in-container worker.
+- Generic security scan still disabled; verdict always NOT_EVALUATED.
+
 # S6.3b (2026-11-09) — two-container HTTP observation
 
 - Restricted opt-in `repo http-probe` for single-file Python stdlib HTTP API on port 8000.

@@ -1,3 +1,13 @@
+# Latest S6.3d checkpoint (2026-11-09)
+
+S6.3c accepted on user Windows: 10 tests PASS, FastAPI image built, real
+HTTP target and verifier observed 200/404, cleanup PASS, verdict NOT_EVALUATED.
+S6.3d adds separate opt-in bounded multi-module Python package probe, schema-v2
+job/worker staging, package+payload hash binding, no host execution. Local
+selected mocked-Docker regression: 123 PASS (including 17 new); Windows S6.3d
+NOT YET TESTED. Two images require rebuild, not Hermes/Ollama. Generic scan
+BLOCKED; no Red/Blue security verdict for arbitrary projects. docs/S6_3d.md.
+
 # Latest S6.3c checkpoint (2026-11-09)
 
 S6.3b accepted on user Windows: 17 unit tests PASS; actual two-container HTTP

@@ -1,0 +1,21 @@
+SecurityLab S6.3d local selected tests (Linux container without Docker daemon)
+Date: 2026-11-09
+Baseline commit: b01378b
+Run: python -m unittest discover -s tests -p <file> -q
+
+22 test_repository.py       PASS
+18 test_snapshots.py        PASS
+12 test_probe.py            PASS
+17 test_http_probe.py       PASS
+10 test_fastapi_probe.py    PASS
+17 test_package_probe.py    PASS
+27 test_container_runner.py PASS
+------------------------------------
+123 selected tests         PASS
+
+Python compileall: PASS
+Git diff --check: PASS
+Live Docker S6.3d: NOT TESTED (Docker daemon/CLI unavailable here)
+Full AI legacy suite: NOT RUN (earlier long timeout behavior)
+
+This result does not imply a successful live Windows multi-file test.

@@ -5,7 +5,7 @@ from .policy import PolicyError
 from .snapshots import verify_snapshot
 
 PROFILE_CAPABILITIES = {
-    'python': {'kind': 'python-service', 'stage': 'PLANNED_NO_RUNNER'},
+    'python': {'kind': 'python-service', 'stage': 'RESTRICTED_PROBES_ONLY'},
     'node': {'kind': 'node-service', 'stage': 'PLANNED_NO_RUNNER'},
     'go': {'kind': 'go-service', 'stage': 'DETECTION_ONLY'},
     'rust': {'kind': 'rust-service', 'stage': 'DETECTION_ONLY'},
@@ -39,6 +39,8 @@ def plan_snapshot(store, sid: str) -> dict:
                            else 'DISABLED'),
             'fastapi_probe': ('EXPLICIT_OPT_IN_PREBUILT_FASTAPI_IMAGE_SINGLE_MODULE' if profile == 'python'
                                else 'DISABLED'),
+            'fastapi_package_probe': ('EXPLICIT_OPT_IN_BOUNDED_PYTHON_PACKAGE' if profile == 'python'
+                                      else 'DISABLED'),
             'missing_gates': ['PINNED_RUNTIME', 'TRUSTED_DEPENDENCY_PREP',
                               'ISOLATED_RUNNER', 'EXTERNAL_EVIDENCE_CHECKER'],
         })
@@ -48,5 +50,5 @@ def plan_snapshot(store, sid: str) -> dict:
         'services': services, 'multi_service': len(services) > 1,
         'source_files': manifest['file_count'],
         'scan_permission': 'DENIED', 'execution_permission': 'DENIED',
-        'note': 'Generic build/start/test and scan remain disabled. Restricted Python standalone, stdlib HTTP and prebuilt FastAPI probes require a verified exact file plus --execute. Neither gives a security verdict.',
+        'note': 'Generic build/start/test and scan remain disabled. Restricted Python standalone, stdlib HTTP, prebuilt FastAPI and bounded package probes require a verified exact file plus --execute. Neither gives a security verdict.',
     }

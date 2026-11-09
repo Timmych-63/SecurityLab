@@ -1,0 +1,4 @@
+[project]
+name = "securitylab-fastapi-package-fixture"
+version = "0.0.1"
+dependencies = ["fastapi==0.115.12", "uvicorn==0.34.2"]

@@ -62,7 +62,7 @@ class ContractTests(unittest.TestCase):
                 job_bytes({'task.py':'',name:''})
     def test_missing_entry_wrong_type_and_version(self):
         for body in ({'schema_version':True,'files':{'task.py':''}},
-                     {'schema_version':2,'files':{'task.py':''}},
+                     {'schema_version':3,'files':{'task.py':''}},
                      {'schema_version':1,'files':{'foo.py':''}},
                      {'schema_version':1,'files':{'task.py':42}}):
             with self.assertRaises(PolicyError):parse_job(json.dumps(body).encode())
