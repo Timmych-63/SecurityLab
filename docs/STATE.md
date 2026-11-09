@@ -1,3 +1,7 @@
+# Latest S6.3a checkpoint (2026-11-09)
+
+S6.2.2 18 snapshot tests confirmed on user Windows. S6.3a adds opt-in single-file Python Docker probe; only mock-transport tests locally (12); live Windows S6.3a not yet confirmed. Not a security scan. See docs/S6_3a.md.
+
 # АКТУАЛЬНАЯ ТОЧКА — S6.2.2 Windows test cleanup hotfix, 2026-11-09
 
 - На Windows пользователя в S6.2.1 16 из 17 snapshot-тестов PASS;

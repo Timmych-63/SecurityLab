@@ -33,6 +33,8 @@ def plan_snapshot(store, sid: str) -> dict:
             'profile_stage': capability['stage'],
             'planned_adapter': capability['kind'],
             'build': 'DISABLED', 'start': 'DISABLED', 'test': 'DISABLED',
+            'standalone_probe': ('EXPLICIT_OPT_IN_PYTHON_FILE_ONLY' if profile == 'python'
+                                 else 'DISABLED'),
             'missing_gates': ['PINNED_RUNTIME', 'TRUSTED_DEPENDENCY_PREP',
                               'ISOLATED_RUNNER', 'EXTERNAL_EVIDENCE_CHECKER'],
         })
@@ -42,5 +44,5 @@ def plan_snapshot(store, sid: str) -> dict:
         'services': services, 'multi_service': len(services) > 1,
         'source_files': manifest['file_count'],
         'scan_permission': 'DENIED', 'execution_permission': 'DENIED',
-        'note': 'A profile plan is NOT permission to execute README, npm scripts or arbitrary commands',
+        'note': 'Full build/start/test and scan remain disabled; Python standalone probe requires an exact manifest file and explicit --execute; never a security verdict',
     }

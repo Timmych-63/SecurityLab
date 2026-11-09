@@ -1,3 +1,8 @@
+## S6.3a — guarded standalone Python Docker probe
+- Opt-in `repo probe` runs one SHA-256-verified Python source file in existing DockerBroker; no host execution or dependency installation.
+- Audits pinned receipt and cleanup; `NOT_EVALUATED` security verdict always, `scan` disabled.
+- 12 mocked transport tests; user Windows live run pending.
+
 # История изменений
 
 ## S6.2.1 — 2026-11-09

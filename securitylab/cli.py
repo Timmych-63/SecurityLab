@@ -55,6 +55,10 @@ def main(argv=None):
     for action in ('verify-snapshot', 'plan'):
         p = repo_sub.add_parser(action)
         p.add_argument('snapshot_id')
+    probe = repo_sub.add_parser('probe', help='Explicit standalone Python Docker probe (NOT a security scan)')
+    probe.add_argument('snapshot_id')
+    probe.add_argument('--entry', required=True, help='Exact .py path inside the verified snapshot')
+    probe.add_argument('--execute', action='store_true', help='Explicitly permit untrusted code execution in Docker')
     args = parser.parse_args(argv)
     if args.command == 'doctor':
         print(json.dumps({'python': sys.version.split()[0], 'core': 'PASS',
@@ -115,6 +119,9 @@ def main(argv=None):
                 result = list_projects(store)
             elif args.repo_command == 'show':
                 result = project_detail(store, args.project_id)
+            elif args.repo_command == 'probe':
+                from .probe_runner import probe_snapshot
+                result = probe_snapshot(store, args.snapshot_id, args.entry, execute=args.execute, limits=limits)
             elif args.repo_command in {'snapshot', 'snapshots', 'verify-snapshot', 'plan'}:
                 from .snapshots import create_snapshot, list_snapshots, verify_snapshot
                 if args.repo_command == 'snapshot':
@@ -161,6 +168,8 @@ def main(argv=None):
             store.get(args.run)
             result = {'report': str(report(store, args.run, output))}
         print(json.dumps(result, ensure_ascii=False, indent=2))
+        if args.command == 'repo' and args.repo_command == 'probe':
+            return 0 if result['status'] in {'EXECUTED_UNTRUSTED', 'NONZERO_EXIT_UNTRUSTED'} else 2
         if args.command in {'demo', 'worker'}:
             rows = result if isinstance(result, list) else [result]
             if any(r['status'] in {'BLOCKED', 'STOPPED'} for r in rows):

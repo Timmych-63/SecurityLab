@@ -1,0 +1,4 @@
+[project]
+name = "securitylab-s63-standalone-example"
+version = "0.1.0"
+dependencies = []
