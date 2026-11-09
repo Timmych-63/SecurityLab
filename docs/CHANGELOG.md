@@ -111,3 +111,13 @@
 - Added cross-platform regression test detecting the stale bound-method cleanup.
 - No runtime code changed. Local: 18 snapshot + 22 repository tests PASS.
 - Windows user verification pending; no change to execution permission.
+
+
+## S6.3c — 2026-11-09
+- Accepted user's live S6.3b HTTP probe on Windows (200 and 404, cleanup PASS).
+- Added bounded FastAPI single-module profile, developer-owned Uvicorn launcher
+  and a separately built, labelled FastAPI runtime image.
+- Pin target and independent verifier images separately by local SHA-256,
+  validate target container identity, and retain no-host-ports/network isolation.
+- Added 10 mock/negative tests; 106 selected tests pass locally.
+- Real new FastAPI Docker test on Windows is pending; no FIXED or scan verdict.

@@ -132,12 +132,26 @@ class ServiceAttachment:
 
 class HTTPDockerBroker(DockerBroker):
     """Owns network, target and verifier lifetimes; no Docker socket in either."""
+    target_image_tag = None  # stdlib S6.3b uses the original trusted demo image.
+
     def __init__(self, cwd: Path, executor=None, attachment_cls=ServiceAttachment):
         if executor is None:
             super().__init__(cwd)
         else:
             super().__init__(cwd, executor)
         self.attachment_cls = attachment_cls
+        self.target_image_id = self.image_id
+        if self.target_image_tag is not None:
+            # Dependency preparation must happen *before* execution in a
+            # developer-selected image. No pip/requirements/scripts from repos.
+            data = json.loads(self.call(['image', 'inspect', self.target_image_tag]).stdout)
+            if (not isinstance(data, list) or len(data) != 1 or
+                not IMAGE_ID.fullmatch(data[0].get('Id', '')) or
+                data[0].get('Config', {}).get('Volumes') or
+                data[0].get('Config', {}).get('Labels', {}).get('org.securitylab.profile') !=
+                    'fastapi-s63c-v1'):
+                raise PolicyError('Missing or invalid pinned FastAPI runtime image')
+            self.target_image_id = data[0]['Id']
 
     def _inspect_network(self, network):
         data = json.loads(self.call(['network', 'inspect', network]).stdout)
@@ -148,14 +162,14 @@ class HTTPDockerBroker(DockerBroker):
             bool(data[0].get('Containers'))):
             raise PolicyError('Ephemeral network is not an empty private internal bridge')
 
-    def _inspect_container(self, name, network):
+    def _inspect_container(self, name, network, *, expected_image_id=None):
         info = json.loads(self.call(['inspect', name]).stdout)
         if not isinstance(info, list) or len(info) != 1:
             raise PolicyError('Missing HTTP container inspect')
         details = info[0]
         cfg = details['Config']; hc = details['HostConfig']
         networks = details.get('NetworkSettings', {}).get('Networks', {})
-        if (cfg.get('Image') != self.image_id or cfg.get('User') != '10001:10001' or
+        if (cfg.get('Image') != (expected_image_id or self.image_id) or cfg.get('User') != '10001:10001' or
             hc.get('Privileged') is not False or hc.get('NetworkMode') != network or
             hc.get('ReadonlyRootfs') is not True or hc.get('Binds') or
             hc.get('PortBindings') or cfg.get('ExposedPorts') or
@@ -187,6 +201,7 @@ class HTTPDockerBroker(DockerBroker):
         receipt = {'schema_version': 1, 'status': 'BLOCKED', 'cleanup': 'NOT_TESTED',
                    'binding': binding, 'source_payload_sha256': hashlib.sha256(payload).hexdigest(),
                    'checks_sha256': checks_hash, 'image_id': self.image_id,
+                   'target_image_id': self.target_image_id,
                    'network_name': network, 'target_name': target, 'verifier_name': verifier,
                    'observations': []}
         output = folder / 'docker_receipt.json'
@@ -200,8 +215,8 @@ class HTTPDockerBroker(DockerBroker):
                        '--label','securitylab.ephemeral=true',network])
             self._inspect_network(network)
             target_attempted = True
-            self.call(http_create_args(self.image_id,target,network,target=True))
-            self._inspect_container(target,network)
+            self.call(http_create_args(self.target_image_id,target,network,target=True))
+            self._inspect_container(target,network,expected_image_id=self.target_image_id)
             verifier_attempted = True
             self.call(http_create_args(self.image_id,verifier,network,target=False,contract_b64=b64))
             self._inspect_container(verifier,network)
@@ -283,3 +298,8 @@ class HTTPDockerBroker(DockerBroker):
                 receipt['cleanup_errors'] = cleanup_errors[:4]
             atomic_text(output,json.dumps(receipt,ensure_ascii=False,indent=2))
         return receipt
+
+
+class FastAPIHTTPDockerBroker(HTTPDockerBroker):
+    """Explicit S6.3c adapter: baked dependencies, no runtime installation."""
+    target_image_tag = 'securitylab-fastapi:local'

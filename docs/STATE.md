@@ -1,3 +1,13 @@
+# Latest S6.3c checkpoint (2026-11-09)
+
+S6.3b accepted on user Windows: 17 unit tests PASS; actual two-container HTTP
+200/404 checks PASS, cleanup PASS, security_verdict NOT_EVALUATED. New S6.3c
+provides a single-module FastAPI profile with a separately baked dependency
+image and independent minimal verifier. 10 new + 96 prior selected mocked tests
+PASS locally. Real FastAPI Docker integration on Windows still pending. No
+Red/Blue scan, dependency install from repository, or arbitrary project startup.
+See `docs/S6_3c.md` and `README_S6_3c_RU.md`.
+
 # Latest S6.3b checkpoint (2026-11-09)
 
 S6.3a accepted on user Windows: 12/12 probe tests, actual Docker standalone execution, cleanup PASS. S6.3b adds independent two-container Python stdlib HTTP contract with private Docker internal network and no security verdict. Local focused tests PASS; real Windows/Docker HTTP test pending. See `docs/S6_3b.md`.

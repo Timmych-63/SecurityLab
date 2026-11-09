@@ -13,6 +13,7 @@ import re
 import uuid
 
 from .http_runner import HTTPDockerBroker
+from .container_runner import IMAGE_ID
 from .job_contract import job_bytes
 from .policy import Limits, PolicyError
 from .probe_runner import _load_verified_entry
@@ -83,7 +84,9 @@ def http_probe_snapshot(store, snapshot_id: str, entry: str, checks: list[str], 
         saved = json.loads(receipt_raw.decode('utf-8'))
         if (saved != result or saved.get('binding') != binding or
             saved.get('source_payload_sha256') != hashlib.sha256(payload).hexdigest() or
-            saved.get('checks_sha256') != checks_hash or saved.get('cleanup') != 'PASS'):
+            saved.get('checks_sha256') != checks_hash or saved.get('cleanup') != 'PASS' or
+            not IMAGE_ID.fullmatch(saved.get('image_id', '')) or
+            not IMAGE_ID.fullmatch(saved.get('target_image_id', ''))):
             raise PolicyError('Invalid HTTP broker receipt or incomplete cleanup')
         if saved['status'] not in {'HTTP_CHECKS_PASSED', 'HTTP_CHECKS_FAILED'}:
             raise PolicyError(saved.get('error', 'HTTP execution did not complete'))
@@ -100,7 +103,8 @@ def http_probe_snapshot(store, snapshot_id: str, entry: str, checks: list[str], 
         if (saved['status'] == 'HTTP_CHECKS_PASSED') != all(row['passed'] for row in observed):
             raise PolicyError('HTTP status contradicts independent observations')
         report.update(status=saved['status'], observations=observed,
-                      image_id=saved['image_id'], cleanup='PASS',
+                      image_id=saved['image_id'], target_image_id=saved['target_image_id'],
+                      cleanup='PASS',
                       receipt_sha256=hashlib.sha256(receipt_raw).hexdigest())
     except (PolicyError, OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
         report['error'] = str(exc)[:2000]

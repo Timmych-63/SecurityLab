@@ -64,6 +64,11 @@ def main(argv=None):
     http_probe.add_argument('--entry', required=True, help='Single-file stdlib HTTP server, binding 0.0.0.0:8000')
     http_probe.add_argument('--expect', action='append', default=[], help='Independent contract PATH=STATUS (repeat 1..8 times)')
     http_probe.add_argument('--execute', action='store_true')
+    fastapi_probe = repo_sub.add_parser('fastapi-probe', help='S6.3c explicit single-module FastAPI observation')
+    fastapi_probe.add_argument('snapshot_id')
+    fastapi_probe.add_argument('--entry', required=True, help='Exact .py path exporting FastAPI app')
+    fastapi_probe.add_argument('--expect', action='append', default=[], help='PATH=STATUS (1..8 checks)')
+    fastapi_probe.add_argument('--execute', action='store_true')
     args = parser.parse_args(argv)
     if args.command == 'doctor':
         print(json.dumps({'python': sys.version.split()[0], 'core': 'PASS',
@@ -130,6 +135,9 @@ def main(argv=None):
             elif args.repo_command == 'http-probe':
                 from .http_probe import http_probe_snapshot
                 result = http_probe_snapshot(store, args.snapshot_id, args.entry, args.expect, execute=args.execute, limits=limits)
+            elif args.repo_command == 'fastapi-probe':
+                from .fastapi_probe import fastapi_probe_snapshot
+                result = fastapi_probe_snapshot(store, args.snapshot_id, args.entry, args.expect, execute=args.execute, limits=limits)
             elif args.repo_command in {'snapshot', 'snapshots', 'verify-snapshot', 'plan'}:
                 from .snapshots import create_snapshot, list_snapshots, verify_snapshot
                 if args.repo_command == 'snapshot':
@@ -176,7 +184,7 @@ def main(argv=None):
             store.get(args.run)
             result = {'report': str(report(store, args.run, output))}
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        if args.command == 'repo' and args.repo_command == 'http-probe':
+        if args.command == 'repo' and args.repo_command in {'http-probe', 'fastapi-probe'}:
             return 0 if result['status'] == 'HTTP_CHECKS_PASSED' else 2
         if args.command == 'repo' and args.repo_command == 'probe':
             return 0 if result['status'] in {'EXECUTED_UNTRUSTED', 'NONZERO_EXIT_UNTRUSTED'} else 2

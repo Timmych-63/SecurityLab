@@ -37,6 +37,8 @@ def plan_snapshot(store, sid: str) -> dict:
                                  else 'DISABLED'),
             'http_probe': ('EXPLICIT_OPT_IN_STDLIB_SINGLE_FILE_PORT_8000' if profile == 'python'
                            else 'DISABLED'),
+            'fastapi_probe': ('EXPLICIT_OPT_IN_PREBUILT_FASTAPI_IMAGE_SINGLE_MODULE' if profile == 'python'
+                               else 'DISABLED'),
             'missing_gates': ['PINNED_RUNTIME', 'TRUSTED_DEPENDENCY_PREP',
                               'ISOLATED_RUNNER', 'EXTERNAL_EVIDENCE_CHECKER'],
         })
@@ -46,5 +48,5 @@ def plan_snapshot(store, sid: str) -> dict:
         'services': services, 'multi_service': len(services) > 1,
         'source_files': manifest['file_count'],
         'scan_permission': 'DENIED', 'execution_permission': 'DENIED',
-        'note': 'Generic build/start/test and scan remain disabled. Restricted Python standalone and stdlib HTTP probes require a verified exact file plus --execute. Neither gives a security verdict.',
+        'note': 'Generic build/start/test and scan remain disabled. Restricted Python standalone, stdlib HTTP and prebuilt FastAPI probes require a verified exact file plus --execute. Neither gives a security verdict.',
     }
