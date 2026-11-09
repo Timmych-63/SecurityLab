@@ -24,7 +24,8 @@ MAX_MANIFEST_BYTES = 128 * 1024
 EXCLUDED_DIRS = frozenset({
     '.git', '.hg', '.svn', '.securitylab', '__pycache__', '.venv', 'venv',
     'node_modules', '.next', '.nuxt', '.tox', '.mypy_cache', '.pytest_cache',
-    '.ruff_cache', '.idea', '.vscode', 'dist', 'build', 'target', 'coverage',
+    '.ruff_cache', '.idea', '.vscode', '.ssh', '.aws', '.kube', 'secrets',
+    'dist', 'build', 'target', 'coverage',
 })
 SECRET_NAMES = frozenset({'.env', '.env.local', '.env.production', 'id_rsa', 'id_ed25519'})
 SECRET_SUFFIXES = ('.pem', '.p12', '.pfx', '.key')

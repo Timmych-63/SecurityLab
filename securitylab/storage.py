@@ -24,6 +24,14 @@ class Store:
           id TEXT PRIMARY KEY, name TEXT NOT NULL, source_path TEXT NOT NULL,
           metadata_fingerprint TEXT NOT NULL, inventory_json TEXT NOT NULL,
           created REAL NOT NULL);
+        CREATE TABLE IF NOT EXISTS project_snapshots(
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES projects(id),
+          created REAL NOT NULL,
+          manifest_sha256 TEXT NOT NULL,
+          file_count INTEGER NOT NULL,
+          total_bytes INTEGER NOT NULL,
+          skipped_secrets INTEGER NOT NULL);
         CREATE TABLE IF NOT EXISTS meta(version INTEGER NOT NULL);
         INSERT INTO meta SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM meta);
         CREATE TABLE IF NOT EXISTS runs(

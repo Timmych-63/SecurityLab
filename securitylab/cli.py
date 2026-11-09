@@ -39,7 +39,7 @@ def main(argv=None):
     scan = sub.add_parser('scan')
     scan.add_argument('project', type=Path)
     sub.add_parser('profiles', help='List detection profiles (no execution profiles yet)')
-    repo = sub.add_parser('repo', help='S6.1 repository discovery, no project execution')
+    repo = sub.add_parser('repo', help='S6 repository discovery and inert snapshots; no project execution')
     repo_sub = repo.add_subparsers(dest='repo_command', required=True)
     for action in ('inspect', 'add'):
         p = repo_sub.add_parser(action)
@@ -49,6 +49,12 @@ def main(argv=None):
     repo_sub.add_parser('list')
     show = repo_sub.add_parser('show')
     show.add_argument('project_id')
+    for action in ('snapshot', 'snapshots'):
+        p = repo_sub.add_parser(action)
+        p.add_argument('project_id')
+    for action in ('verify-snapshot', 'plan'):
+        p = repo_sub.add_parser(action)
+        p.add_argument('snapshot_id')
     args = parser.parse_args(argv)
     if args.command == 'doctor':
         print(json.dumps({'python': sys.version.split()[0], 'core': 'PASS',
@@ -107,8 +113,21 @@ def main(argv=None):
                 result = add_project(store, args.path, args.name)
             elif args.repo_command == 'list':
                 result = list_projects(store)
-            else:
+            elif args.repo_command == 'show':
                 result = project_detail(store, args.project_id)
+            elif args.repo_command in {'snapshot', 'snapshots', 'verify-snapshot', 'plan'}:
+                from .snapshots import create_snapshot, list_snapshots, verify_snapshot
+                if args.repo_command == 'snapshot':
+                    result = create_snapshot(store, args.project_id)
+                elif args.repo_command == 'snapshots':
+                    result = list_snapshots(store, args.project_id)
+                elif args.repo_command == 'verify-snapshot':
+                    result = verify_snapshot(store, args.snapshot_id)
+                else:
+                    from .profile_plan import plan_snapshot
+                    result = plan_snapshot(store, args.snapshot_id)
+            else:
+                raise PolicyError('Unknown repository command')
         elif args.command == 'init':
             result = {'state': str(store.root), 'schema_version': 1}
         elif args.command == 'demo':
