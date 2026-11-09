@@ -75,6 +75,14 @@ def main(argv=None):
     package_probe.add_argument('--entry', required=True, help='Exact .py path within snapshot; app must be exported')
     package_probe.add_argument('--expect', action='append', default=[], help='PATH=STATUS (1..8 checks)')
     package_probe.add_argument('--execute', action='store_true')
+    access = repo_sub.add_parser('access-baseline',
+        help='S7.1 operator-authored access policy observed by independent Docker HTTP verifier')
+    access.add_argument('snapshot_id')
+    access.add_argument('--service', default='.', help='Selected service directory in verified snapshot')
+    access.add_argument('--entry', required=True, help='FastAPI package module exporting app')
+    access.add_argument('--policy', type=Path, required=True,
+                        help='External trusted JSON policy outside tested project/state')
+    access.add_argument('--execute', action='store_true')
     args = parser.parse_args(argv)
     if args.command == 'doctor':
         print(json.dumps({'python': sys.version.split()[0], 'core': 'PASS',
@@ -148,6 +156,10 @@ def main(argv=None):
                 from .package_probe import package_probe_snapshot
                 result = package_probe_snapshot(store, args.snapshot_id, args.entry, args.expect, service=args.service,
                                                 execute=args.execute, limits=limits)
+            elif args.repo_command == 'access-baseline':
+                from .access_baseline import access_baseline_snapshot
+                result = access_baseline_snapshot(store, args.snapshot_id, args.entry, args.policy,
+                                                  service=args.service, execute=args.execute, limits=limits)
             elif args.repo_command in {'snapshot', 'snapshots', 'verify-snapshot', 'plan'}:
                 from .snapshots import create_snapshot, list_snapshots, verify_snapshot
                 if args.repo_command == 'snapshot':
@@ -194,6 +206,8 @@ def main(argv=None):
             store.get(args.run)
             result = {'report': str(report(store, args.run, output))}
         print(json.dumps(result, ensure_ascii=False, indent=2))
+        if args.command == 'repo' and args.repo_command == 'access-baseline':
+            return {'ACCESS_POLICY_MATCHED': 0, 'ACCESS_POLICY_VIOLATION_REPRODUCED': 3}.get(result['status'], 2)
         if args.command == 'repo' and args.repo_command in {'http-probe', 'fastapi-probe', 'fastapi-package-probe'}:
             return 0 if result['status'] == 'HTTP_CHECKS_PASSED' else 2
         if args.command == 'repo' and args.repo_command == 'probe':

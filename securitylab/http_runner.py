@@ -32,11 +32,14 @@ assert isinstance(checks,list) and 1 <= len(checks) <= 8
 rows=[]
 for item in checks:
     path=item['path']; expected=item['expected_status']; actual=None; failure=None
+    actor=item.get('actor'); body=b''
     for attempt in range(14):
         try:
             conn=http.client.HTTPConnection('target',8000,timeout=1.5)
             try:
-                conn.request('GET',path,headers={'Host':'target','Connection':'close'})
+                headers={'Host':'target','Connection':'close'}
+                if actor is not None: headers['X-Test-User']=actor
+                conn.request('GET',path,headers=headers)
                 res=conn.getresponse()
                 actual=res.status
                 body=res.read(4097)
@@ -47,8 +50,13 @@ for item in checks:
         except (OSError,TimeoutError,http.client.HTTPException) as e:
             failure=type(e).__name__
             if attempt<13: time.sleep(0.2)
-    rows.append({'path':path,'expected_status':expected,'actual_status':actual,
-                 'passed':actual==expected,'error':failure})
+    row={'path':path,'expected_status':expected,'actual_status':actual,
+         'passed':actual==expected,'error':failure}
+    if actor is not None:
+        row.update(actor=actor, body_sha256=hashlib.sha256(body).hexdigest() if actual is not None else None,
+                   body_bytes=len(body) if actual is not None else None,
+                   body_truncated=len(body)>4096 if actual is not None else None)
+    rows.append(row)
 result={'schema_version':1,'nonce':nonce,'observations':rows}
 print(json.dumps(result,sort_keys=True,separators=(',',':')),flush=True)
 sys.exit(0 if all(x['passed'] for x in rows) else 1)
@@ -190,6 +198,17 @@ class HTTPDockerBroker(DockerBroker):
         parse_job(payload)
         if not isinstance(checks, list) or not 1 <= len(checks) <= 8:
             raise PolicyError('Invalid HTTP check collection')
+        for item in checks:
+            if not isinstance(item,dict) or set(item) not in (
+                    {'path','expected_status'}, {'path','expected_status','actor'}):
+                raise PolicyError('Invalid bounded HTTP check fields')
+            if (not isinstance(item['path'],str) or not re.fullmatch(r'/[A-Za-z0-9._~/?&=+!$(),;:@-]{0,240}', item['path']) or
+                item['path'].startswith('//') or '/..' in item['path'] or
+                type(item['expected_status']) is not int or not 200 <= item['expected_status'] <= 599):
+                raise PolicyError('Invalid bounded HTTP path or status')
+            if 'actor' in item and (not isinstance(item['actor'],str) or
+                not re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,31}', item['actor'], re.ASCII)):
+                raise PolicyError('Invalid bounded synthetic actor')
         uuid_hex = uuid.uuid4().hex
         network = 'securitylab-http-' + uuid_hex
         target = 'securitylab-job-' + uuid.uuid4().hex
@@ -247,7 +266,10 @@ class HTTPDockerBroker(DockerBroker):
                 not isinstance(data['observations'],list) or len(data['observations']) != len(checks)):
                 raise PolicyError('Independent verifier output/binding invalid')
             for expected, actual in zip(checks,data['observations']):
-                if (not isinstance(actual,dict) or set(actual) != {'path','expected_status','actual_status','passed','error'} or
+                wanted = {'path','expected_status','actual_status','passed','error'}
+                if 'actor' in expected:
+                    wanted |= {'actor','body_sha256','body_bytes','body_truncated'}
+                if (not isinstance(actual,dict) or set(actual) != wanted or
                     actual['path'] != expected['path'] or actual['expected_status'] != expected['expected_status'] or
                     (actual['actual_status'] is not None and (type(actual['actual_status']) is not int or
                     not 100 <= actual['actual_status'] <= 599)) or
@@ -255,6 +277,14 @@ class HTTPDockerBroker(DockerBroker):
                     type(actual['passed']) is not bool or
                     actual['passed'] != (actual['actual_status'] == expected['expected_status'])):
                     raise PolicyError('Independent verifier check contradiction')
+                if 'actor' in expected and (actual.get('actor') != expected['actor'] or
+                    (actual['actual_status'] is not None and (
+                        not isinstance(actual['body_sha256'],str) or
+                        not re.fullmatch(r'[a-f0-9]{64}',actual['body_sha256']) or
+                        type(actual['body_bytes']) is not int or not 0 <= actual['body_bytes'] <= 4097 or
+                        type(actual['body_truncated']) is not bool or
+                        actual['body_truncated'] != (actual['body_bytes'] > 4096)))):
+                    raise PolicyError('Independent verifier actor/body evidence invalid')
             if any(row['actual_status'] is None for row in data['observations']):
                 raise PolicyError('HTTP verifier could not obtain every response')
             all_pass = all(row['passed'] for row in data['observations'])

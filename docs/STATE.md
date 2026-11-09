@@ -1,3 +1,16 @@
+# S7.1 status (2026-11-09)
+
+S6.3d accepted on Windows: 17 tests OK and real 3-request FastAPI package
+probe PASS, independent cleanup PASS. New S7.1 adds an **explicit operator-
+authored** access-control baseline against verified FastAPI package snapshots,
+with a trusted external policy and actor-scoped independent HTTP evidence.
+S7.1 not yet tested with live Docker on user's Windows machine. No autonomous
+Red/Blue testing on arbitrary repositories, no auto patch Git workflow, no
+unrestricted scan, no dashboard yet. Refer to `docs/S7_1.md` and the latest
+Project Handoff for requirements. Earlier historical status below.
+
+---
+
 # Latest S6.3d checkpoint (2026-11-09)
 
 S6.3c accepted on user Windows: 10 tests PASS, FastAPI image built, real

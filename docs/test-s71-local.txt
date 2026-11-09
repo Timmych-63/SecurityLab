@@ -1,0 +1,15 @@
+S7.1 development environment, 2026-11-09
+Individual focused unittest discover runs (Docker mocked except local loopback test):
+test_repository.py 22 PASS
+test_snapshots.py 18 PASS
+test_probe.py 12 PASS
+test_http_probe.py 17 PASS
+test_fastapi_probe.py 10 PASS
+test_package_probe.py 17 PASS
+test_container_runner.py 27 PASS
+test_access_baseline.py 17 PASS
+TOTAL 140 selected tests PASS (individual runs; not one full-suite invocation).
+Source-owned FastAPI TestClient checks also confirmed actual body SHA-256 values
+of both synthetic fixtures against examples/security_policies/record_ownership.json.
+No live Docker daemon available in the development environment.
+Full legacy AI suite did not complete due known long transport-timeout tests.

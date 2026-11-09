@@ -1,3 +1,17 @@
+# S7.1 (2026-11-09) — externally anchored access-control baseline
+
+- User confirmed Windows S6.3d (17/17 tests, 3 live HTTP observations PASS, cleanup PASS).
+- Added opt-in `repo access-baseline` for bounded Python FastAPI packages; operator-owned
+  independent JSON policy outside the examined repository/state.
+- Fixed independent verifier now supports synthetic actor header and body SHA-256,
+  while preserving earlier no-actor probes. Reference control body SHA-256 is pinned
+  by the operator's policy; read from a different actor matching the full control
+  body and HTTP 200 reproduces a policy violation. It does not claim general safety.
+- Added vulnerable/fixed synthetic access-control fixtures, tests and receipt bindings.
+- Generic scan, automated Red/Blue patch, production credentials remain unsupported.
+- Docker images don't need rebuilding; verifier is supplied at container create.
+- Live Windows S7.1 acceptance not yet received.
+
 # S6.3d (2026-11-09) — bounded multi-file FastAPI profile
 
 - Windows S6.3c accepted: 10 tests, real 200/404 HTTP checks, Docker cleanup PASS.

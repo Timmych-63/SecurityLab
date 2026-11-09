@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "policy_id": "synthetic-record-ownership",
+  "checks": [
+    {
+      "id": "owner-one",
+      "kind": "control",
+      "path": "/records/one",
+      "actor": "alice",
+      "expected_status": 200,
+      "expected_body_sha256": "7935b02d77c70bc29f69d3093c11211bb0b691a08f16ef8b731be5adc499328b"
+    },
+    {
+      "id": "owner-two",
+      "kind": "control",
+      "path": "/records/two",
+      "actor": "bob",
+      "expected_status": 200,
+      "expected_body_sha256": "8531a77fadaf01906bcdfa8603b5e15962270408a9c046cc1fce838c7ef71170"
+    },
+    {
+      "id": "outsider-two",
+      "kind": "deny",
+      "path": "/records/two",
+      "actor": "alice",
+      "expected_status": 403,
+      "compare_body_to": "owner-two"
+    },
+    {
+      "id": "outsider-one",
+      "kind": "deny",
+      "path": "/records/one",
+      "actor": "bob",
+      "expected_status": 403,
+      "compare_body_to": "owner-one"
+    }
+  ]
+}
