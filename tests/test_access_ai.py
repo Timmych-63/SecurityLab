@@ -41,11 +41,16 @@ class FakeHermes:
             value={'file':req['entry'],'description':'Possible missing record ownership check',
                    'check_id':self.red_case}
         else:
-            value={'file':req['entry'],'content':self.blue_text}
+            text = self.blue_text
+            if isinstance(text, list):
+                text = text[1 if 'evidence' in req else 0]
+            elif 'evidence' in req:
+                text += '\n# second proposal\n'
+            value={'file':req['entry'],'content':text}
         validate_reply(req,value)
-        identity='a'*32 if req['role']=='red' else 'b'*32
+        identity='a'*32 if req['role']=='red' else ('c' if 'evidence' in req else 'b')*32
         record={'id':identity,'role':req['role'],'status':'PROPOSED',
-                'cleanup':'PASS','request_sha256':digest(req),'attempt':1,
+                'cleanup':'PASS','request_sha256':digest(req),'attempt':2 if 'retry' in req else 1,
                 'response':{'proposal':value,'request_sha256':digest(req),
                             'model_digest':MODEL_DIGEST,'tools':[]}}
         (self.output/(identity+'.json')).write_text(json.dumps(record),encoding='utf-8')
@@ -160,8 +165,96 @@ class AccessAIFixture(unittest.TestCase):
         FakeHermes.blue_text=FIX.replace("x_test_user != record['owner']","x_test_user == record['owner']")
         result=self.run_ai()
         self.assertEqual(result['status'],'NEEDS_REVIEW',result)
-        self.assertEqual(self.observer.calls,['baseline','candidate'])
+        self.assertEqual(self.observer.calls,['baseline','candidate','candidate_retry'])
         self.assertIsNone(result['finding_status'])
+        self.assertNotIn('git',result)
+
+    def test_failed_candidate_corrected_with_evidence_and_preserved(self):
+        wrong=(self.src/'app/main.py').read_text('utf-8')+'\n# cosmetic change\n'
+        FakeHermes.blue_text=[wrong,FIX]
+        result=self.run_ai()
+        self.assertEqual(result['status'],'PASS',result)
+        self.assertEqual(self.observer.calls,['baseline','candidate','candidate_retry','recheck'])
+        self.assertEqual(result['blue_attempts_used'],2)
+        self.assertEqual(len(FakeHermes.calls),3)
+        req=FakeHermes.calls[-1]
+        self.assertEqual(req['source'],wrong)
+        self.assertIn('Independent HTTP evidence',prompt(req))
+        self.assertTrue(any(x['actual_status'] != x['expected_status'] for x in req['evidence']))
+        root=Path(result['record']).parent
+        self.assertEqual((root/'candidate_1.py').read_text('utf-8'),wrong)
+        self.assertEqual((root/'candidate_2.py').read_text('utf-8'),FIX)
+
+    def test_failed_candidate_evidence_tamper_blocks_before_retry(self):
+        FakeHermes.blue_text=FIX.replace("x_test_user != record['owner']","x_test_user == record['owner']")
+        prior=self.observer
+        def observer(folder,*args,**kwargs):
+            result=prior(folder,*args,**kwargs)
+            if folder.name=='candidate':
+                (folder/'docker_receipt.json').write_bytes(b'forged')
+            return result
+        result=run_access_ai(self.store,self.sid,'app/main.py',self.policy,
+            execute=True,adapter_factory=FakeHermes,observer=observer)
+        self.assertEqual(result['status'],'BLOCKED',result)
+        self.assertEqual(len(FakeHermes.calls),2)
+
+    def test_schema_retry_exhausts_functional_budget(self):
+        FakeHermes.blue_text=FIX.replace("x_test_user != record['owner']","x_test_user == record['owner']")
+        class UsedBudget(FakeHermes):
+            def ask(inner, req):
+                value, receipt=super().ask(req)
+                if req['role']=='blue':
+                    receipt['attempt']=2
+                    (inner.output/(receipt['id']+'.json')).write_text(json.dumps(receipt),encoding='utf-8')
+                return value,receipt
+        result=run_access_ai(self.store,self.sid,'app/main.py',self.policy,
+            execute=True,adapter_factory=UsedBudget,observer=self.observer)
+        self.assertEqual(result['status'],'NEEDS_REVIEW',result)
+        self.assertEqual(self.observer.calls,['baseline','candidate'])
+
+    def test_failed_candidate_image_or_cleanup_blocks_before_retry(self):
+        FakeHermes.blue_text=FIX.replace("x_test_user != record['owner']","x_test_user == record['owner']")
+        self.observer.different_image='candidate'
+        result=self.run_ai()
+        self.assertEqual(result['status'],'BLOCKED',result)
+        self.assertEqual(len(FakeHermes.calls),2)
+
+    def test_first_candidate_tamper_during_retry_blocks_commit(self):
+        FakeHermes.blue_text=[(self.src/'app/main.py').read_text('utf-8')+'\n# edit\n',FIX]
+        prior=self.observer
+        def observer(folder,*args,**kwargs):
+            result=prior(folder,*args,**kwargs)
+            if folder.name=='candidate_retry':
+                (folder.parent/'candidate_1.py').write_bytes(b'changed')
+            return result
+        result=run_access_ai(self.store,self.sid,'app/main.py',self.policy,
+            execute=True,adapter_factory=FakeHermes,observer=observer)
+        self.assertEqual(result['status'],'BLOCKED',result)
+        self.assertNotIn('git',result)
+
+    def test_failed_cleanup_does_not_trigger_correction(self):
+        FakeHermes.blue_text=FIX.replace("x_test_user != record['owner']","x_test_user == record['owner']")
+        prior=self.observer
+        def observer(folder,*args,**kwargs):
+            result=prior(folder,*args,**kwargs)
+            if folder.name=='candidate':
+                result['cleanup']='FAIL'
+            return result
+        result=run_access_ai(self.store,self.sid,'app/main.py',self.policy,
+            execute=True,adapter_factory=FakeHermes,observer=observer)
+        self.assertEqual(result['status'],'BLOCKED',result)
+        self.assertEqual(len(FakeHermes.calls),2)
+
+    def test_correction_timeout_blocks_without_commit(self):
+        FakeHermes.blue_text=FIX.replace("x_test_user != record['owner']","x_test_user == record['owner']")
+        class Timeout(FakeHermes):
+            def ask(inner,req):
+                if 'evidence' in req:
+                    raise PolicyError('TIMEOUT')
+                return super().ask(req)
+        result=run_access_ai(self.store,self.sid,'app/main.py',self.policy,
+            execute=True,adapter_factory=Timeout,observer=self.observer)
+        self.assertEqual(result['status'],'BLOCKED',result)
         self.assertNotIn('git',result)
 
     def test_incomplete_recheck_never_commits(self):
@@ -290,6 +383,18 @@ class AccessContractTests(unittest.TestCase):
                     {'file':'app/main.py','content':FIX,'FIXED':True}):
             with self.subTest(out=out),self.assertRaises(PolicyError):
                 validate_reply(req,out)
+    def test_corrective_evidence_is_bounded_and_bound_to_policy(self):
+        evidence=[{'id':c['id'],'expected_status':c['expected_status'],'actual_status':200} for c in self.checks]
+        req=make_request('blue','app/main.py',self.source,self.checks,
+                         finding='outsider-one',retry='failed',evidence=evidence)
+        self.assertIn('Independent HTTP evidence',prompt(req))
+        for field,value in [('id','unknown'),('expected_status',200),('actual_status',True)]:
+            rows=[dict(x) for x in evidence]
+            rows[-1][field]=value
+            with self.subTest(field=field),self.assertRaises(PolicyError):
+                make_request('blue','app/main.py',self.source,self.checks,
+                    finding='outsider-one',retry='failed',evidence=rows)
+
     def test_untrusted_request_cannot_set_task_fields(self):
         with self.assertRaises(PolicyError):
             make_request('red','../bad.py',self.source,self.checks)

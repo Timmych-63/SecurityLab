@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import re
+import sys
 from pathlib import Path
 import uuid
 
@@ -169,33 +170,75 @@ def run_access_ai(store, snapshot_id: str, entry: str, policy_path: Path, *,
                 output['status']='NEEDS_REVIEW'
                 output['error']='Independent baseline did not reproduce selected Red case'
                 return output
+            ai_audits = [(red_receipt, red, _audit_ai_receipt(directory/'calls',red_receipt,red))]
+            def audit_progress():
+                if verify_snapshot(store,sid)['manifest_sha256'] != verified['manifest_sha256']:
+                    raise PolicyError('Source snapshot changed during verification')
+                if read_external_policy(store,sid,policy_path)[1] != policy_hash:
+                    raise PolicyError('Independent policy changed during verification')
+                for receipt, proposal, sha in ai_audits:
+                    if _audit_ai_receipt(directory/'calls',receipt,proposal) != sha:
+                        raise PolicyError('Hermes receipt changed during independent verification')
+                if len({(r['image_id'],r['target_image_id']) for r in output['stages'].values()}) != 1:
+                    raise PolicyError('Docker images differed between baseline and candidate')
+                for stage, report in output['stages'].items():
+                    if report['cleanup'] != 'PASS':
+                        raise PolicyError('Independent cleanup failed')
+                    if json.loads((directory/stage/'summary.json').read_text('utf-8')) != report:
+                        raise PolicyError('Independent stage summary changed')
+                    if _sha((directory/stage/'docker_receipt.json').read_bytes()) != report['receipt_sha256']:
+                        raise PolicyError('Independent Docker receipt changed')
+                for attempt in output.get('candidates', []):
+                    if _sha((directory/attempt['file']).read_bytes()) != attempt['sha256']:
+                        raise PolicyError('Saved Blue candidate changed during verification')
+
+            audit_progress()
             blue_req=make_request('blue',entry,original,hints,finding=red['check_id'])
-            blue,blue_receipt=adapter.ask(blue_req)
-            validate_reply(blue_req,blue)
-            if (red_receipt['response']['model_digest'] != MODEL_DIGEST or
-                blue_receipt['response']['model_digest'] != MODEL_DIGEST):
-                raise PolicyError('Unexpected or changed Hermes model')
-            output['ai_calls'].append({'role':'blue','id':blue_receipt['id'],
-                           'model_digest':blue_receipt['response']['model_digest']})
-            output['ai_receipt_sha256']={'red':_audit_ai_receipt(directory/'calls',red_receipt,red),
-                                         'blue':_audit_ai_receipt(directory/'calls',blue_receipt,blue)}
-            candidate=blue['content']
-            output['candidate_sha256']=_sha(candidate)
-            atomic_text(directory / 'candidate.py',candidate)
             repo,branch,base_commit=_prepare_git(directory,sources,relative,run_id)
             candidate_file=safe_path(repo,relative)
-            candidate_file.write_bytes(candidate.encode('utf-8'))
-            _git(repo,'diff','--check')
-            if _git(repo,'diff','--name-only') != relative:
-                raise PolicyError('Patch attempted to modify an unselected file')
-            patched=dict(sources,**{relative:candidate})
-            first=_observe(store,directory,run_id,'candidate',sid,service,entry,module,
-                patched,policy,policy_hash,verified['manifest_sha256'],broker_factory,observer,limits)
-            output['stages']['candidate']=first
-            if first['status']!='ACCESS_POLICY_MATCHED':
-                output['status']='NEEDS_REVIEW'
-                output['error']='Blue candidate does not satisfy independent policy'
-                return output
+            output['candidates']=[]
+            for candidate_number in (1, 2):
+                blue,blue_receipt=adapter.ask(blue_req)
+                validate_reply(blue_req,blue)
+                attempt = blue_receipt.get('attempt')
+                if type(attempt) is not int or attempt not in (1,2) or (candidate_number == 2 and attempt != 2):
+                    raise PolicyError('Invalid Blue attempt budget receipt')
+                output['blue_attempts_used']=attempt
+                output['ai_calls'].append({'role':'blue','id':blue_receipt['id'],
+                               'model_digest':blue_receipt['response']['model_digest']})
+                sha=_audit_ai_receipt(directory/'calls',blue_receipt,blue)
+                ai_audits.append((blue_receipt,blue,sha))
+                output['ai_receipt_sha256']={r['id']:h for r,p,h in ai_audits}
+                candidate=blue['content']
+                output['candidate_sha256']=_sha(candidate)
+                saved_name=f'candidate_{candidate_number}.py'
+                atomic_text(directory/saved_name,candidate)
+                atomic_text(directory/'candidate.py',candidate)
+                output['candidates'].append({'file':saved_name,'sha256':_sha(candidate),
+                                            'call_id':blue_receipt['id']})
+                candidate_file.write_bytes(candidate.encode('utf-8'))
+                _git(repo,'diff','--check')
+                if _git(repo,'diff','--name-only') != relative:
+                    raise PolicyError('Patch attempted to modify an unselected file')
+                patched=dict(sources,**{relative:candidate})
+                stage='candidate' if candidate_number == 1 else 'candidate_retry'
+                first=_observe(store,directory,run_id,stage,sid,service,entry,module,
+                    patched,policy,policy_hash,verified['manifest_sha256'],broker_factory,observer,limits)
+                output['stages'][stage]=first
+                audit_progress()
+                if first['status']=='ACCESS_POLICY_MATCHED':
+                    break
+                if first['status']!='ACCESS_POLICY_VIOLATION_REPRODUCED' or attempt == 2:
+                    output['status']='NEEDS_REVIEW'
+                    output['error']='Blue candidate does not satisfy independent policy; no corrective budget or reproducible case'
+                    return output
+                evidence=[{'id':c['id'],'expected_status':c['expected_status'],
+                           'actual_status':a['actual_status']}
+                          for c,a in zip(policy['checks'],first['observations'])]
+                blue_req=make_request('blue',entry,candidate,hints,finding=red['check_id'],
+                    retry='Independent candidate verification failed',evidence=evidence)
+                print('Blue: independent policy violation persists; final corrective attempt (2/2).',
+                      file=sys.stderr,flush=True)
             second=_observe(store,directory,run_id,'recheck',sid,service,entry,module,
                 patched,policy,policy_hash,verified['manifest_sha256'],broker_factory,observer,limits)
             output['stages']['recheck']=second
@@ -214,15 +257,7 @@ def run_access_ai(store, snapshot_id: str, entry: str, policy_path: Path, *,
             _, current_policy_hash=read_external_policy(store,sid,policy_path)
             if current_policy_hash!=policy_hash:
                 raise PolicyError('Independent policy changed during verification')
-            if (_audit_ai_receipt(directory/'calls',red_receipt,red)!=output['ai_receipt_sha256']['red'] or
-                _audit_ai_receipt(directory/'calls',blue_receipt,blue)!=output['ai_receipt_sha256']['blue']):
-                raise PolicyError('Hermes receipt changed during independent verification')
-            for stage,report in output['stages'].items():
-                if json.loads((directory/stage/'summary.json').read_text('utf-8'))!=report:
-                    raise PolicyError('Independent stage summary changed')
-                receipt=(directory/stage/'docker_receipt.json').read_bytes()
-                if _sha(receipt)!=report['receipt_sha256']:
-                    raise PolicyError('Independent Docker receipt changed')
+            audit_progress()
             if _git(repo,'rev-parse','main')!=base_commit or _git(repo,'branch','--show-current')!=branch:
                 raise PolicyError('Git baseline or work branch changed')
             _git(repo,'add','--',relative)
