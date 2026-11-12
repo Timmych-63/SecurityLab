@@ -81,9 +81,10 @@ class FakeIndependentObserver:
             key=check['path'].rsplit('/',1)[-1]
             owner='alice' if key=='one' else 'bob'
             control=check['actor']==owner
-            status=200 if (control or not fixed) else 403
+            status=(401 if check['actor'] is None else 404 if key not in ('one','two')
+                    else 200 if (control or not fixed) else 403)
             data=(json.dumps({'id':key,'owner':owner,'value':'synthetic-A' if key=='one' else 'synthetic-B'},
-                             separators=(',',':')).encode() if status==200 else b'forbidden')
+                             separators=(',',':')).encode() if status==200 else json.dumps({'detail':{401:'Unauthorized',403:'Forbidden',404:'Not Found'}[status]},separators=(',',':')).encode())
             observations.append({'actor':check['actor'],'path':check['path'],
                 'expected_status':check['expected_status'],'actual_status':status,
                 'body_bytes':len(data),'body_truncated':False,

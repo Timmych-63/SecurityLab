@@ -52,7 +52,7 @@ for item in checks:
             if attempt<13: time.sleep(0.2)
     row={'path':path,'expected_status':expected,'actual_status':actual,
          'passed':actual==expected,'error':failure}
-    if actor is not None:
+    if 'actor' in item:
         row.update(actor=actor, body_sha256=hashlib.sha256(body).hexdigest() if actual is not None else None,
                    body_bytes=len(body) if actual is not None else None,
                    body_truncated=len(body)>4096 if actual is not None else None)
@@ -206,7 +206,7 @@ class HTTPDockerBroker(DockerBroker):
                 item['path'].startswith('//') or '/..' in item['path'] or
                 type(item['expected_status']) is not int or not 200 <= item['expected_status'] <= 599):
                 raise PolicyError('Invalid bounded HTTP path or status')
-            if 'actor' in item and (not isinstance(item['actor'],str) or
+            if 'actor' in item and item['actor'] is not None and (not isinstance(item['actor'],str) or
                 not re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,31}', item['actor'], re.ASCII)):
                 raise PolicyError('Invalid bounded synthetic actor')
         uuid_hex = uuid.uuid4().hex

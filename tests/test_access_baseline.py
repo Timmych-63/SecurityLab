@@ -54,13 +54,14 @@ class FakeAccessDocker(FakeFastAPIDocker):
             for c in contract['checks']:
                 control = ((c['actor'] == 'alice' and c['path'] == '/records/one') or
                            (c['actor'] == 'bob' and c['path'] == '/records/two'))
-                code = (200 if control or self.vulnerable else 403)
+                code = (401 if c['actor'] is None else 404 if c['path'].endswith('/missing')
+                        else 200 if control or self.vulnerable else 403)
                 if not control and self.unauthorized_status is not None:
                     code = self.unauthorized_status
                 key=c['path'].rsplit('/',1)[1]
                 record={'id':key, 'owner':'alice' if key=='one' else 'bob',
                         'value':'synthetic-A' if key=='one' else 'synthetic-B'}
-                body=(json.dumps(record,separators=(',',':')).encode() if code==200 else b'forbidden')
+                body=(json.dumps(record,separators=(',',':')).encode() if code==200 else json.dumps({'detail':{401:'Unauthorized',403:'Forbidden',404:'Not Found'}[code]},separators=(',',':')).encode())
                 if self.empty_control and control:
                     body = b''
                 if self.unmatched_body and not control:
@@ -269,7 +270,7 @@ class TrustedVerifierActorTests(unittest.TestCase):
             def do_GET(self):
                 actor=self.headers.get('X-Test-User')
                 data=('hello-'+actor).encode() if actor else b'not-authenticated'
-                self.send_response(200 if actor=='alice' else 403)
+                self.send_response(200 if actor=='alice' else 401 if actor is None else 403)
                 self.send_header('Content-Length',str(len(data)))
                 self.end_headers()
                 self.wfile.write(data)
@@ -284,16 +285,18 @@ class TrustedVerifierActorTests(unittest.TestCase):
             port=server.server_address[1]
             script=VERIFIER_SCRIPT.replace("HTTPConnection('target',8000",f"HTTPConnection('127.0.0.1',{port}")
             checks=[{'path':'/records/one','actor':'alice','expected_status':200},
-                    {'path':'/records/one','actor':'bob','expected_status':403}]
+                    {'path':'/records/one','actor':'bob','expected_status':403},
+                    {'path':'/records/one','actor':None,'expected_status':401}]
             environment={**os.environ,
                 'SL_HTTP_CONTRACT':base64.b64encode(json.dumps({'checks':checks,'nonce':'test'}).encode()).decode()}
             result=subprocess.run([sys.executable,'-I','-B','-c',script],env=environment,
                                   cwd=tempfile.gettempdir(),capture_output=True,text=True,timeout=10)
             self.assertEqual(result.returncode,0,result.stderr)
             obs=json.loads(result.stdout)['observations']
-            self.assertEqual([r['actor'] for r in obs],['alice','bob'])
+            self.assertEqual([r['actor'] for r in obs],['alice','bob',None])
             self.assertEqual(obs[0]['body_sha256'],hashlib.sha256(b'hello-alice').hexdigest())
             self.assertEqual(obs[1]['body_sha256'],hashlib.sha256(b'hello-bob').hexdigest())
+            self.assertEqual(obs[2]['body_sha256'],hashlib.sha256(b'not-authenticated').hexdigest())
             self.assertTrue(all(row['passed'] for row in obs))
         finally:
             server.shutdown();server.server_close();thread.join(timeout=5)

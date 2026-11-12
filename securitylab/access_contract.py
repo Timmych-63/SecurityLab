@@ -47,10 +47,14 @@ def validate_request(req):
     for c in req['checks']:
         if (not isinstance(c, dict) or set(c) != {'id','kind','actor','path','expected_status'} or
             not isinstance(c['id'], str) or not _ID.fullmatch(c['id']) or c['id'] in seen or
-            c['kind'] not in ('control','deny') or not isinstance(c['actor'],str) or
+            c['kind'] not in ('control','deny','regression') or
+            not (isinstance(c['actor'],str) or (c['actor'] is None and c['kind'] != 'control')) or
             not isinstance(c['path'],str) or type(c['expected_status']) is not int or
-            c['expected_status'] not in (200,401,403)):
+            c['expected_status'] not in (200,401,403,404)):
             raise PolicyError('Invalid S7.2 checks')
+        allowed = {'control': (200,), 'deny': (401,403), 'regression': (401,404)}
+        if c['expected_status'] not in allowed[c['kind']]:
+            raise PolicyError('Check status contradicts kind')
         seen.add(c['id'])
     if role == 'blue' and (not isinstance(req['finding'], str) or req['finding'] not in
                            {c['id'] for c in req['checks'] if c['kind'] == 'deny'}):
@@ -119,7 +123,7 @@ def prompt(req):
                          '"check_id":"id from denied checks"}. Do not claim execution.')
     return common + ('The independent verifier already reproduced a policy violation on this check ID: '
                      + req['finding'] + '. Fix only the authorization bug while preserving valid owner reads, '
-                     'missing-record behavior and all endpoints. Return the COMPLETE corrected module as '
+                     'missing-record behavior (404), requests without a user (401) and all endpoints. Return the COMPLETE corrected module as '
                      '{"file":"' + req['entry'] + '","content":"entire Python source with escaped JSON newlines"}. '
                      'No other files or fields. Do not claim FIXED or tests executed.\n' +
                      ('The independently executed previous candidate still leaked cross-owner data. '

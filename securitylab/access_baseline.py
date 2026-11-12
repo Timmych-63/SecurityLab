@@ -91,16 +91,17 @@ def read_external_policy(store, snapshot_id: str, path: Path) -> tuple[dict, str
 
 def validate_policy(policy: dict) -> None:
     if (not isinstance(policy, dict) or set(policy) != {'schema_version', 'policy_id', 'checks'} or
-        type(policy['schema_version']) is not int or policy['schema_version'] != 1 or
+        type(policy['schema_version']) is not int or policy['schema_version'] not in (1, 2) or
         not isinstance(policy['policy_id'], str) or not _ID.fullmatch(policy['policy_id']) or
         not isinstance(policy['checks'], list) or not 2 <= len(policy['checks']) <= 8):
         raise PolicyError('Unsupported independent access policy schema')
+    kinds = ('control', 'deny', 'regression') if policy['schema_version'] == 2 else ('control', 'deny')
     ids = {}
     pairs = set()
     has_control = has_deny = False
     for index, check in enumerate(policy['checks']):
-        if not isinstance(check, dict) or check.get('kind') not in ('control', 'deny'):
-            raise PolicyError('Policy check kind must be control or deny')
+        if not isinstance(check, dict) or check.get('kind') not in kinds:
+            raise PolicyError('Unsupported policy check kind')
         kind = check['kind']
         wanted = {'id', 'kind', 'path', 'actor', 'expected_status'}
         if kind == 'deny':
@@ -112,7 +113,8 @@ def validate_policy(policy: dict) -> None:
         ident, actor, path, expected = (check['id'], check['actor'], check['path'],
                                        check['expected_status'])
         if (not isinstance(ident, str) or not _ID.fullmatch(ident) or ident in ids or
-            not isinstance(actor, str) or not _ACTOR.fullmatch(actor) or
+            not ((actor is None and policy['schema_version'] == 2 and kind != 'control') or
+                 (isinstance(actor, str) and _ACTOR.fullmatch(actor))) or
             not isinstance(path, str) or not _PATH.fullmatch(path) or
             path.startswith('//') or '/..' in path or
             (actor, path) in pairs or type(expected) is not int):
@@ -123,6 +125,11 @@ def validate_policy(policy: dict) -> None:
             if not isinstance(check['expected_body_sha256'],str) or not _SHA.fullmatch(check['expected_body_sha256']):
                 raise PolicyError('Control requires operator-anchored expected body SHA-256')
             has_control = True
+        elif kind == 'regression':
+            if expected not in (401, 404):
+                raise PolicyError('Regression check must expect HTTP 401 or 404')
+            if not isinstance(check['expected_body_sha256'],str) or not _SHA.fullmatch(check['expected_body_sha256']):
+                raise PolicyError('Regression requires operator-anchored expected body SHA-256')
         else:
             if expected not in (401, 403):
                 raise PolicyError('Denied check must expect HTTP 401 or 403')
@@ -164,6 +171,12 @@ def _classify(policy: dict, observations: list[dict]) -> tuple[str, str, str | N
     if not all(a['passed'] and a['body_bytes'] > 0 and
                a['body_sha256'] == c['expected_body_sha256'] for c, a in controls):
         return 'NEEDS_REVIEW', 'NOT_EVALUATED', None, [{'reason':'Control did not return the operator-anchored expected body SHA-256'}]
+    regressions = [(c, by_id[c['id']]) for c in policy['checks'] if c['kind'] == 'regression']
+    for check, actual in regressions:
+        matched = actual['passed'] and actual['body_sha256'] == check['expected_body_sha256']
+        explanations.append({'id':check['id'], 'result':'REGRESSION_MATCHED' if matched else 'REGRESSION_FAILED'})
+    if any(row['result'] == 'REGRESSION_FAILED' for row in explanations):
+        return 'NEEDS_REVIEW', 'NOT_EVALUATED', None, explanations
     reproduced = []
     unresolved = []
     for check in policy['checks']:

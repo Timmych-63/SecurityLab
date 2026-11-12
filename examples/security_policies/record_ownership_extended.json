@@ -1,0 +1,70 @@
+{
+  "schema_version": 2,
+  "policy_id": "synthetic-record-ownership-regression",
+  "checks": [
+    {
+      "id": "owner-one",
+      "kind": "control",
+      "path": "/records/one",
+      "actor": "alice",
+      "expected_status": 200,
+      "expected_body_sha256": "7935b02d77c70bc29f69d3093c11211bb0b691a08f16ef8b731be5adc499328b"
+    },
+    {
+      "id": "owner-two",
+      "kind": "control",
+      "path": "/records/two",
+      "actor": "bob",
+      "expected_status": 200,
+      "expected_body_sha256": "8531a77fadaf01906bcdfa8603b5e15962270408a9c046cc1fce838c7ef71170"
+    },
+    {
+      "id": "outsider-two",
+      "kind": "deny",
+      "path": "/records/two",
+      "actor": "alice",
+      "expected_status": 403,
+      "compare_body_to": "owner-two"
+    },
+    {
+      "id": "outsider-one",
+      "kind": "deny",
+      "path": "/records/one",
+      "actor": "bob",
+      "expected_status": 403,
+      "compare_body_to": "owner-one"
+    },
+    {
+      "id": "anonymous-one",
+      "kind": "regression",
+      "actor": null,
+      "path": "/records/one",
+      "expected_status": 401,
+      "expected_body_sha256": "8f399debe52f271e56918a3ef03cd90d60776f7c972e6807b1ef2a7437c1040c"
+    },
+    {
+      "id": "anonymous-missing",
+      "kind": "regression",
+      "actor": null,
+      "path": "/records/missing",
+      "expected_status": 401,
+      "expected_body_sha256": "8f399debe52f271e56918a3ef03cd90d60776f7c972e6807b1ef2a7437c1040c"
+    },
+    {
+      "id": "owner-missing",
+      "kind": "regression",
+      "actor": "alice",
+      "path": "/records/missing",
+      "expected_status": 404,
+      "expected_body_sha256": "37ec4665a8102d115ffd1ac20dae94c98b4dac64b0c1a68228aa2a531caeb35d"
+    },
+    {
+      "id": "third-user-one",
+      "kind": "deny",
+      "actor": "charlie",
+      "path": "/records/one",
+      "expected_status": 403,
+      "compare_body_to": "owner-one"
+    }
+  ]
+}
