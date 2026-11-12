@@ -18,7 +18,7 @@ def invoke(req, agent_class, capture=None):
                         quiet_mode=True, skip_context_files=True, skip_memory=True,
                         skip_background_review=True, load_soul_identity=False,
                         save_trajectories=False, max_iterations=2, max_tokens=2048,
-                        run_budget_seconds=240, fallback_model=None,
+                        run_budget_seconds=1140, fallback_model=None,
                         reasoning_config={'enabled': False},
                         request_overrides={'temperature': 0, 'response_format': {'type': 'json_object'}})
     if agent.tools:

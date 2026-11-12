@@ -1,5 +1,6 @@
 """Host-side bounded Hermes transport; no shell or state access granted to AI."""
 import json
+from dataclasses import dataclass
 from pathlib import Path
 import uuid
 import sys
@@ -11,6 +12,19 @@ from .process import execute
 from .storage import atomic_text
 
 NETWORK = 'securitylab-ai-private'
+
+
+@dataclass(frozen=True)
+class AIProcessLimits:
+    # Only the trusted, tool-free model worker gets this longer deadline.
+    timeout: int = 1200
+    output_bytes: int = 131072
+
+    def __post_init__(self):
+        if type(self.timeout) is not int or not 1 <= self.timeout <= 1200:
+            raise PolicyError('Invalid AI timeout')
+        Limits(output_bytes=self.output_bytes)
+
 
 
 def validate_envelope(req, value):
@@ -91,7 +105,7 @@ class HermesAdapter:
     def _ask_once(self, req, stop):
         proposal_prompt(req)
         attempt = 2 if 'retry' in req else 1
-        print(f"{req['role']}: attempt {attempt}, timeout 300 seconds", file=sys.stderr, flush=True)
+        print(f"{req['role']}: attempt {attempt}, timeout 1200 seconds", file=sys.stderr, flush=True)
         identity = uuid.uuid4().hex
         name = 'securitylab-ai-' + identity
         path = self.output / (identity + '.json')
@@ -124,7 +138,7 @@ class HermesAdapter:
                 or any(x.get('Type') in {'bind','volume'} for x in info.get('Mounts', []))):
                 raise PolicyError('Unsafe Hermes container configuration')
             result = self.call(['start', '-a', '-i', name], check=False,
-                               limits=Limits(timeout=300, output_bytes=131072),
+                               limits=AIProcessLimits(),
                                input_data=json.dumps(req).encode(), stop=stop)
             record['execution'] = result.data()
             state = json.loads(self.call(['inspect', '--format', '{{json .State}}', name]).stdout)

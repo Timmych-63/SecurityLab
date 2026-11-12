@@ -189,7 +189,7 @@ class IndependentAttemptTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             fake=BlueAttemptTransport();a=HermesAdapter(Path(d),Path(d)/'calls',fake)
             value,record=a.ask(request('blue',RED))
-            self.assertEqual(value,BLUE);self.assertEqual(fake.limits,[300,300]);self.assertEqual(record['attempt'],2)
+            self.assertEqual(value,BLUE);self.assertEqual(fake.limits,[1200,1200]);self.assertEqual(record['attempt'],2)
             records=[json.loads(p.read_text()) for p in (Path(d)/'calls').glob('*.json')]
             self.assertEqual(len(records),2);self.assertEqual({r['status'] for r in records},{'REJECTED','PROPOSED'})
             self.assertTrue(all(r['cleanup']=='PASS' for r in records))
