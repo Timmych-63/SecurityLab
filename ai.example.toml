@@ -1,0 +1,9 @@
+# Copy to ai.local.toml and select explicitly via SECURITYLAB_AI_CONFIG.
+[ai]
+model = "qwen3.5:2b"
+model_digest = "0689d44085e06d165161a8a9a1731344278cfb5aade63a3c3dbdb48ab54b130a"
+server_url = "http://model:11434"
+network = "securitylab-ai-private"
+context_tokens = 64000
+max_output_tokens = 2048
+timeout_seconds = 1200

@@ -8,17 +8,19 @@ from urllib.request import urlopen
 from .ai_contract import HERMES_REVISION, MODEL, MODEL_DIGEST, strict_json, digest
 from .proposal_modes import proposal_prompt, proposal_validate, proposal_feedback, proposal_system
 from .policy import PolicyError
+from .ai_config import AIConfig, from_dict
 
 
-def invoke(req, agent_class, capture=None):
+def invoke(req, agent_class, capture=None, config=None):
+    config = config or AIConfig()
     query = proposal_prompt(req)
     attempt = 2 if 'retry' in req else 1
-    agent = agent_class(model=MODEL, base_url='http://model:11434/v1', api_key='local-only',
+    agent = agent_class(model=config.model, base_url=config.server_url + '/v1', api_key='local-only',
                         provider='custom', api_mode='chat_completions', enabled_toolsets=[],
                         quiet_mode=True, skip_context_files=True, skip_memory=True,
                         skip_background_review=True, load_soul_identity=False,
-                        save_trajectories=False, max_iterations=2, max_tokens=2048,
-                        run_budget_seconds=1140, fallback_model=None,
+                        save_trajectories=False, max_iterations=2, max_tokens=config.max_output_tokens,
+                        run_budget_seconds=config.timeout_seconds - 60, fallback_model=None,
                         reasoning_config={'enabled': False},
                         request_overrides={'temperature': 0, 'response_format': {'type': 'json_object'}})
     if agent.tools:
@@ -62,25 +64,26 @@ def main():
             raise PolicyError('Request too large')
         req = strict_json(raw.decode('utf-8'))
         proposal_prompt(req)
+        config = from_dict(json.loads(os.environ.get('SECURITYLAB_AI_RUNTIME', '{}')))
         # The only runtime model endpoint is on the private Docker network.
-        with urlopen('http://model:11434/api/tags', timeout=10) as response:
+        with urlopen(config.server_url + '/api/tags', timeout=10) as response:
             body = response.read(1048577)
         if len(body) > 1048576:
             raise PolicyError('Model inventory too large')
         models = json.loads(body)['models']
-        selected = [x for x in models if x.get('name') == MODEL]
-        if len(selected) != 1 or selected[0].get('digest') != MODEL_DIGEST:
+        selected = [x for x in models if x.get('name') == config.model]
+        if len(selected) != 1 or selected[0].get('digest') != config.model_digest:
             raise PolicyError('Expected model missing or digest changed; preload the pinned model')
         home = Path(os.environ['HERMES_HOME'])
         home.mkdir(parents=True, exist_ok=True)
-        (home / 'config.yaml').write_text('model:\n  context_length: 64000\n  ollama_num_ctx: 64000\n', encoding='utf-8')
+        (home / 'config.yaml').write_text(f'model:\n  context_length: {config.context_tokens}\n  ollama_num_ctx: {config.context_tokens}\n', encoding='utf-8')
         with contextlib.redirect_stdout(sys.stderr):
             sys.path.insert(0, '/opt/hermes')
             from run_agent import AIAgent
-            value = invoke(req, AIAgent, capture=lambda raw: print(
+            value = invoke(req, AIAgent, config=config, capture=lambda raw: print(
                 'AI_RESPONSE_JSON=' + json.dumps(raw, ensure_ascii=True), file=sys.stderr))
         print(json.dumps({'schema_version': 1, 'role': req['role'], 'request_sha256': digest(req),
-                          'hermes_revision': HERMES_REVISION, 'model': MODEL,
+                          'hermes_revision': HERMES_REVISION, 'model': config.model,
                           'model_digest': selected[0]['digest'], 'tools': [], 'proposal': value}))
         return 0
     except Exception as exc:

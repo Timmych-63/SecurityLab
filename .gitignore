@@ -6,3 +6,4 @@ build/
 dist/
 .securitylab/
 .env
+ai.local.toml

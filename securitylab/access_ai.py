@@ -14,7 +14,8 @@ import uuid
 
 from .access_baseline import _classify, read_external_policy
 from .access_contract import make_request, validate_reply
-from .ai_contract import MODEL_DIGEST, digest
+from .ai_contract import digest
+from .ai_config import AIConfig
 from .fastapi_probe import run_fastapi_http_observation
 from .hermes_adapter import HermesAdapter
 from .http_runner import FastAPIHTTPDockerBroker
@@ -73,7 +74,8 @@ def _prepare_git(run_folder: Path, sources: dict[str,str], entry: str, run_id: s
     return target, branch, original
 
 
-def _audit_ai_receipt(folder: Path, record: dict, proposal: dict):
+def _audit_ai_receipt(folder: Path, record: dict, proposal: dict, config=None):
+    config = config or AIConfig()
     identity = record.get('id')
     if not isinstance(identity,str) or not re.fullmatch(r'[a-f0-9]{32}',identity):
         raise PolicyError('Invalid Hermes receipt ID')
@@ -83,10 +85,13 @@ def _audit_ai_receipt(folder: Path, record: dict, proposal: dict):
         raise PolicyError('Hermes receipt exceeds audit bound')
     saved = json.loads(raw.decode('utf-8'))
     envelope = saved.get('response',{})
+    if 'ai_config' in saved and (saved['ai_config'] != config.data() or
+        saved.get('ai_config_sha256') != config.sha256):
+        raise PolicyError('AI configuration receipt changed')
     if (saved != record or saved.get('status') != 'PROPOSED' or
         saved.get('cleanup') != 'PASS' or
         envelope.get('proposal') != proposal or
-        envelope.get('model_digest') != MODEL_DIGEST or
+        envelope.get('model_digest') != config.model_digest or
         saved.get('request_sha256') != envelope.get('request_sha256') or
         envelope.get('tools') != []):
         raise PolicyError('Hermes proposal receipt modified or unverified')
@@ -154,6 +159,9 @@ def run_access_ai(store, snapshot_id: str, entry: str, policy_path: Path, *,
     try:
         with worker_lock(folder):
             adapter = adapter_factory(Path.cwd(),directory/'calls')
+            ai_config = getattr(adapter, 'config', AIConfig())
+            output['ai_config'] = ai_config.data()
+            output['ai_config_sha256'] = ai_config.sha256
             red,red_receipt=adapter.ask(make_request('red',entry,original,hints))
             validate_reply(make_request('red',entry,original,hints),red)
             output['red']={'file':red['file'],'check_id':red['check_id'],
@@ -170,14 +178,14 @@ def run_access_ai(store, snapshot_id: str, entry: str, policy_path: Path, *,
                 output['status']='NEEDS_REVIEW'
                 output['error']='Independent baseline did not reproduce selected Red case'
                 return output
-            ai_audits = [(red_receipt, red, _audit_ai_receipt(directory/'calls',red_receipt,red))]
+            ai_audits = [(red_receipt, red, _audit_ai_receipt(directory/'calls',red_receipt,red,ai_config))]
             def audit_progress():
                 if verify_snapshot(store,sid)['manifest_sha256'] != verified['manifest_sha256']:
                     raise PolicyError('Source snapshot changed during verification')
                 if read_external_policy(store,sid,policy_path)[1] != policy_hash:
                     raise PolicyError('Independent policy changed during verification')
                 for receipt, proposal, sha in ai_audits:
-                    if _audit_ai_receipt(directory/'calls',receipt,proposal) != sha:
+                    if _audit_ai_receipt(directory/'calls',receipt,proposal,ai_config) != sha:
                         raise PolicyError('Hermes receipt changed during independent verification')
                 if len({(r['image_id'],r['target_image_id']) for r in output['stages'].values()}) != 1:
                     raise PolicyError('Docker images differed between baseline and candidate')
@@ -206,7 +214,7 @@ def run_access_ai(store, snapshot_id: str, entry: str, policy_path: Path, *,
                 output['blue_attempts_used']=attempt
                 output['ai_calls'].append({'role':'blue','id':blue_receipt['id'],
                                'model_digest':blue_receipt['response']['model_digest']})
-                sha=_audit_ai_receipt(directory/'calls',blue_receipt,blue)
+                sha=_audit_ai_receipt(directory/'calls',blue_receipt,blue,ai_config)
                 ai_audits.append((blue_receipt,blue,sha))
                 output['ai_receipt_sha256']={r['id']:h for r,p,h in ai_audits}
                 candidate=blue['content']

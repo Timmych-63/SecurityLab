@@ -11,6 +11,8 @@ from .policy import Limits, PolicyError
 from .process import execute
 from .storage import atomic_text
 
+from .ai_config import AIConfig, load_config
+
 NETWORK = 'securitylab-ai-private'
 
 
@@ -27,15 +29,16 @@ class AIProcessLimits:
 
 
 
-def validate_envelope(req, value):
+def validate_envelope(req, value, config=None):
+    config = config or AIConfig()
     expected = {'schema_version', 'role', 'request_sha256', 'hermes_revision', 'model', 'model_digest', 'tools', 'proposal'}
     if (not isinstance(value, dict) or set(value) != expected or type(value['schema_version']) is not int
         or value['schema_version'] != 1 or value['role'] != req['role']
         or value['request_sha256'] != digest(req) or value['hermes_revision'] != HERMES_REVISION
-        or value['model'] != MODEL or value['tools'] != []
+        or value['model'] != config.model or value['tools'] != []
         or not isinstance(value['model_digest'], str) or len(value['model_digest']) != 64
         or any(x not in '0123456789abcdef' for x in value['model_digest'])
-        or value['model_digest'] != MODEL_DIGEST):
+        or value['model_digest'] != config.model_digest):
         raise PolicyError('Invalid Hermes response binding/configuration')
     proposal = value['proposal']
     if req['role'] == 'smoke':
@@ -71,7 +74,8 @@ def rejected_reply(stderr, role, attempt):
 
 
 class HermesAdapter:
-    def __init__(self, cwd, output, executor=execute):
+    def __init__(self, cwd, output, executor=execute, config=None):
+        self.config = config or load_config()
         self.cwd, self.output, self.execute = Path(cwd).resolve(), Path(output), executor
         r = executor(['docker', 'context', 'inspect', '--format', '{{.Endpoints.docker.Host}}'], self.cwd, Limits())
         endpoint = r.stdout.strip()
@@ -82,7 +86,7 @@ class HermesAdapter:
         self.image = image['Id']
         if not IMAGE_ID.fullmatch(self.image) or image.get('Config', {}).get('Volumes'):
             raise PolicyError('Unsafe Hermes image')
-        network = json.loads(self.call(['network', 'inspect', NETWORK]).stdout)[0]
+        network = json.loads(self.call(['network', 'inspect', self.config.network]).stdout)[0]
         if network.get('Internal') is not True or network.get('Driver') != 'bridge':
             raise PolicyError('Private internal model network required')
 
@@ -105,13 +109,14 @@ class HermesAdapter:
     def _ask_once(self, req, stop):
         proposal_prompt(req)
         attempt = 2 if 'retry' in req else 1
-        print(f"{req['role']}: attempt {attempt}, timeout 1200 seconds", file=sys.stderr, flush=True)
+        print(f"{req['role']}: attempt {attempt}, timeout {self.config.timeout_seconds} seconds", file=sys.stderr, flush=True)
         identity = uuid.uuid4().hex
         name = 'securitylab-ai-' + identity
         path = self.output / (identity + '.json')
         record = {'id': identity, 'role': req['role'], 'request_sha256': digest(req), 'image_id': self.image,
                   'container': name, 'attempt': attempt, 'status': 'BLOCKED', 'cleanup': 'NOT_TESTED',
-                  'trust': 'AI proposal, not vulnerability evidence'}
+                  'trust': 'AI proposal, not vulnerability evidence',
+                  'ai_config': self.config.data(), 'ai_config_sha256': self.config.sha256}
         atomic_text(path, json.dumps(record, indent=2))
         attempted = False
         failure = None
@@ -120,15 +125,16 @@ class HermesAdapter:
                 raise PolicyError('AI call cancelled')
             attempted = True
             self.call(['create', '--name', name, '--label', 'securitylab.ai.ephemeral=true', '-i', '--init',
-                       '--network', NETWORK, '--read-only', '--user', '10001:10001', '--cap-drop', 'ALL',
+                       '--network', self.config.network, '--read-only', '--user', '10001:10001', '--cap-drop', 'ALL',
                        '--security-opt', 'no-new-privileges:true', '--memory', '1536m', '--memory-swap', '1536m',
                        '--pids-limit', '128', '--cpus', '1', '--log-driver', 'none', '--restart', 'no',
-                       '--tmpfs', '/tmp:rw,noexec,nosuid,nodev,size=128m', self.image])
+                       '--tmpfs', '/tmp:rw,noexec,nosuid,nodev,size=128m',
+                       '--env', 'SECURITYLAB_AI_RUNTIME=' + json.dumps(self.config.data()), self.image])
             info = json.loads(self.call(['inspect', name]).stdout)[0]
             host = info['HostConfig']
             if (info['Config']['Image'] != self.image or info['Config']['User'] != '10001:10001'
                 or host.get('ReadonlyRootfs') is not True or host.get('Privileged') is not False
-                or host.get('NetworkMode') != NETWORK or host.get('Binds') or host.get('Devices')
+                or host.get('NetworkMode') != self.config.network or host.get('Binds') or host.get('Devices')
                 or host.get('DeviceRequests') or host.get('PidMode') == 'host' or host.get('IpcMode') == 'host'
                 or set(host.get('CapDrop') or []) != {'ALL'} or host.get('CapAdd')
                 or not any(x in ('no-new-privileges','no-new-privileges:true') for x in host.get('SecurityOpt', []))
@@ -138,7 +144,7 @@ class HermesAdapter:
                 or any(x.get('Type') in {'bind','volume'} for x in info.get('Mounts', []))):
                 raise PolicyError('Unsafe Hermes container configuration')
             result = self.call(['start', '-a', '-i', name], check=False,
-                               limits=AIProcessLimits(),
+                               limits=AIProcessLimits(timeout=self.config.timeout_seconds),
                                input_data=json.dumps(req).encode(), stop=stop)
             record['execution'] = result.data()
             state = json.loads(self.call(['inspect', '--format', '{{json .State}}', name]).stdout)
@@ -158,7 +164,7 @@ class HermesAdapter:
                 or state.get('Error') or type(state.get('ExitCode')) is not int or state['ExitCode'] != 0):
                 raise PolicyError('Hermes failed/interrupted: ' + result.stderr[-1500:])
             envelope = strict_json(result.stdout)
-            proposal = validate_envelope(req, envelope)
+            proposal = validate_envelope(req, envelope, self.config)
             record.update(status='PROPOSED', response=envelope)
         except KeyboardInterrupt:
             record['status'] = 'CANCELLED'
