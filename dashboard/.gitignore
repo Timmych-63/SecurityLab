@@ -1,0 +1,5 @@
+server/state.json
+server/seed.json
+
+node_modules/
+*.tsbuildinfo

@@ -128,7 +128,7 @@ def _observe(store, folder: Path, run_id: str, stage: str, snapshot_id: str,
 def run_access_ai(store, snapshot_id: str, entry: str, policy_path: Path, *,
                   service='.', execute=False, adapter_factory=HermesAdapter,
                   broker_factory=FastAPIHTTPDockerBroker,
-                  observer=run_fastapi_http_observation, limits=Limits()):
+                  observer=run_fastapi_http_observation, limits=Limits(), run_id=None):
     if execute is not True:
         raise PolicyError('S7.2 requires explicit --execute')
     sid = _id(snapshot_id)
@@ -143,7 +143,7 @@ def run_access_ai(store, snapshot_id: str, entry: str, policy_path: Path, *,
     hints = [{'id':c['id'],'kind':c['kind'],'actor':c['actor'],
               'path':c['path'],'expected_status':c['expected_status']}
              for c in policy['checks']]
-    run_id=uuid.uuid4().hex
+    run_id=_id(run_id) if run_id is not None else uuid.uuid4().hex
     directory=store.root / 'access_ai' / run_id
     directory.mkdir(parents=True,exist_ok=False)
     output={'schema_version':1,'run_id':run_id,'mode':'S7_2_ACCESS_AI_SINGLE_MODULE',
