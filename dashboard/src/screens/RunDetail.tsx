@@ -252,7 +252,7 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
         </Button>
       </div>
       <ScreenHead
-        no={`${mode === 'demo' ? 'демо в браузере · ' : mode === 'sim-server' ? 'сервер симуляции · ' : ''}${run.timingKnown === false ? 'дата файла summary (время запуска неизвестно)' : 'старт'} ${fmtDateTime(run.startedAt)}${run.finishedAt ? ` · завершён ${fmtDateTime(run.finishedAt)}` : ' · ещё идёт'}`}
+        no={`${mode === 'demo' ? 'демо в браузере · ' : mode === 'sim-server' ? 'сервер симуляции · ' : ''}${run.timingKnown === false ? 'дата файла summary (время запуска неизвестно)' : 'старт'} ${fmtDateTime(run.startedAt)}${run.timingKnown === false ? '' : run.finishedAt ? ` · завершён ${fmtDateTime(run.finishedAt)}` : ' · ещё идёт'}`}
         title={<span className="font-mono text-[26px] sm:text-[30px]">{run.id}</span>}
         meta={meta}
         actions={

@@ -44,7 +44,7 @@ def run_view(summary, identity, root, *, job=None, project_id='', modified=0):
         stages=[dict(id=k,label=k,role='verifier',state='done',detail=v.get('status','')) for k,v in stages.items()],
         events=[dict(t=0,source='securitylab',text=summary.get('error') or job.get('error') or ('Status: '+status))],
         checks=checks,attempts=[],artifacts=[],aiConfiguration=cfg,
-        tech=dict(image='securitylab-hermes:s4',imageDigest=next(iter(stages.values()),{}).get('image_id','нет данных'),
+        tech=dict(image='Verifier: securitylab-demo:local',imageDigest=next(iter(stages.values()),{}).get('image_id','нет данных'),
             network=cfg.get('network','нет данных'),configHash=summary.get('ai_config_sha256',job.get('ai_config_sha256','нет данных')),
             snapshotPin=summary.get('manifest_sha256','нет данных'),
             cleanup='нет данных; см. receipts',hashDisclaimer='Хеши — привязка сохранённых данных, не подпись.'))

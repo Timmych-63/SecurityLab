@@ -339,4 +339,3 @@ export const ENDPOINTS = [
   { action: 'Диагностика', module: 'docker/metrics', endpoint: 'GET /api/diagnostics — нет данных → {available:false}' },
   { action: 'CSRF для изменяющих операций', module: '—', endpoint: 'GET /api/csrf + заголовок X-CSRF-Token; сервер слушает loopback' },
 ] as const
-
