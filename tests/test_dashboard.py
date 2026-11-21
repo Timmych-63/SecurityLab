@@ -102,10 +102,47 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(r['exec'],'completed');self.assertEqual(r['finding'],'FIXED')
         self.assertEqual(r['verdict'],raw['security_verdict'])
 
+    def test_research_hypothesis_view_maps_stage_identifiers(self):
+        # S11.3: the UI explains the empty 'Свежий стенд' cell for consistent
+        # hypotheses and names the stages that produced each status (run #6).
+        raw=dict(mode='S11_RESEARCH_CYCLE',status='DONE',security_verdict='NOT_EVALUATED',
+                 finding_status=None,stages={},hypotheses=[
+            dict(n=1,file='app/main.py',path='/records/one',actor=None,description='d',
+                 expected_status=403,basis='b',observed_status=200,observed_stage='http_01',
+                 confirm_status=None,confirm_stage=None,state='consistent')])
+        r=run_view(raw,'a'*32,self.app.root)
+        h=r['hypotheses'][0]
+        self.assertEqual(h['observedStage'],'http_01')
+        self.assertIsNone(h['confirmStage'])
+        self.assertEqual(h['state'],'consistent')
+        confirmed=dict(raw,hypotheses=[dict(raw['hypotheses'][0],state='confirmed',
+                 confirm_status=200,confirm_stage='confirm')])
+        h=run_view(confirmed,'a'*32,self.app.root)['hypotheses'][0]
+        self.assertEqual(h['confirmStage'],'confirm')
+
     def test_project_read_model_and_snapshot_ids(self):
         p=self.app.project_rows()[0]
+        self.assertTrue(p['supported'])
         self.assertEqual(p['snapshots'][0]['id'],self.inp['snapshotId'])
         self.assertIn('app/main.py',[e['entryFile'] for e in p['services']])
+
+    def test_manifest_free_snapshot_is_offered_but_admission_still_required(self):
+        with contextlib.closing(Store(self.app.root)) as store:
+            store.db.execute('UPDATE projects SET inventory_json=? WHERE id=?',
+                (json.dumps({'services':[], 'languages':{}}),self.inp['projectId']))
+            store.db.commit()
+        self.assertTrue(self.app.project_rows()[0]['supported'])
+        self.inp['entryModule']='missing.py'
+        with self.assertRaises(PolicyError): self.app.validate_input(self.inp)
+
+    def test_non_python_project_not_promoted(self):
+        other=self.tmp/'nodeproject';other.mkdir()
+        (other/'package.json').write_text('{"name":"test"}')
+        with contextlib.closing(Store(self.app.root)) as store:
+            pid=add_project(store,other)['id']
+            create_snapshot(store,pid)
+        row=next(p for p in self.app.project_rows() if p['id']==pid)
+        self.assertFalse(row['supported'])
 
     def test_http_same_origin_csrf_and_static_bootstrap(self):
         try: server=ThreadingHTTPServer(('127.0.0.1',0),Handler)

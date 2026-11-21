@@ -125,6 +125,8 @@ class WorkflowTests(TempTest):
             p = subprocess.run([sys.executable, '-c', script, str(self.store.root)], capture_output=True)
         self.assertNotEqual(p.returncode, 0)
         self.assertIn(b'Another worker', p.stderr)
+        self.assertIn(str(self.store.root).encode(), p.stderr)
+        self.assertIn(b'stop the previous dashboard', p.stderr)
         with worker_lock(self.store.root): pass
 
     def test_events_export_recreated(self):

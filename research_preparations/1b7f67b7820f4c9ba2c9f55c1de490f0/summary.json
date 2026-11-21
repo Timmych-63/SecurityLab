@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "id": "1b7f67b7820f4c9ba2c9f55c1de490f0",
+  "status": "PREPARED",
+  "execution_ready": false,
+  "security_verdict": "NOT_EVALUATED",
+  "created": 1794920760.0060134,
+  "snapshot_id": "97e86117050d43f987969dec4e36d570",
+  "entry": "app/main.py",
+  "service": ".",
+  "module": "app.main",
+  "manifest_sha256": "06267fc925806b0fabeb5fcecdab03c332e404c521678f39424d7f4086618cd4",
+  "package_sha256": "2973b3684708a4993acd91c142386474285bf7edfd6dc1525276d6dd2d94b7b6",
+  "knowledge_sha256": "62960c3f9069bc32e6f647cfee9a9c7df8445d6808280da821063018c5659a46",
+  "setup_sha256": "fbd5c700ef33620ef4338f4a2c51b64a961bfb699dbff56948beac3c5216611e",
+  "runtime": "fastapi-local-v1",
+  "budget": {
+    "seconds": 3600,
+    "decisions": 12,
+    "requests": 60
+  },
+  "actors": {
+    "alice": "user",
+    "bob": "user",
+    "admin": "admin"
+  },
+  "capabilities": [
+    "source.read",
+    "source.search",
+    "local.http.get"
+  ],
+  "limitations": [
+    "Подготовка не запускает Docker или AI и не подтверждает готовность стенда",
+    "Готовность стенда проверяется отдельно перед запуском (preflight)",
+    "До 31 Python-модуля / 180 КБ; статические маршруты; без внешних БД"
+  ],
+  "record": "C:\\Users\\User\\Downloads\\Разные версии\\SecurityLab_Z\\SecurityLab_v0.1.0_M1_M2\\research_preparations\\1b7f67b7820f4c9ba2c9f55c1de490f0\\summary.json"
+}

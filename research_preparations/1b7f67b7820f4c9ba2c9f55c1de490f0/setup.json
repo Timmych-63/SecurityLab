@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "runtime": "fastapi-local-v1",
+  "identity": "trusted-test-user-header",
+  "actors": {
+    "alice": "user",
+    "bob": "user",
+    "admin": "admin"
+  },
+  "budget": {
+    "seconds": 3600,
+    "decisions": 12,
+    "requests": 60
+  }
+}

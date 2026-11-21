@@ -1,0 +1,19 @@
+{
+  "commit": "7360d809e937612bde6e5e37301ab22ae6e69b46",
+  "base": "ab85c15",
+  "validation": "138 tests PASS; final focused 15 tests PASS; Docker simulated; live S5 Windows/Qwen pending",
+  "files": {
+    "README_S5_RU.md": "3242a692c0b99f8c8a89c6c5085e1d106d065d70854d8572e159b71bd723149e",
+    "docs/S5.md": "ff78f2e34291667567e927ae730319d8bac0c4f55e391546110d22d83fea52fb",
+    "docs/test-s5-focused.txt": "a38aa118ff3acd14a7337226600e64da49b44a6a014ed1c797662dc1cc9233ca",
+    "docs/test-s5-output.txt": "d0060e8a382c2cffb1269250d1c819ab927d0367a0eaf7925e304083d4bdc1c7",
+    "securitylab/ai_contract.py": "456c5b0fa201fd57b57121a55a8f03da096ac7fa53a7ae149ddb6afc0952d9cc",
+    "securitylab/ai_workflow.py": "5f6a627cb5eeed22aa345808871f4dfdb1ac6d51bcd652564e331f0be7d13994",
+    "securitylab/candidate_policy.py": "7b7c8b669c2baaaa80d7a2670c1132787664916f258d50eb5ddc83bed5dac608",
+    "securitylab/candidate_verifier.py": "d601da1964f9526788abd032e58f8db6edbc9361bbf1952059d27377989decc1",
+    "securitylab/cli.py": "3719d34183276f804d820eb741c3fdabf48d6cf0b5724addeeac75fd1ed8036d",
+    "securitylab/hermes_adapter.py": "571f387306b3e9b9dcc9c6057c01066c3c52b5cadd6499d0526fac36fc91281b",
+    "securitylab/hermes_worker.py": "29ac1f0a39388ad438e85fd4bffb9151fb1283aa822e15196306f2200fcebf14",
+    "tests/test_candidate.py": "91d6d9f318d0f6033cdb7375718aa2cb44ae2d9a8a896a2929db972a796e9596"
+  }
+}

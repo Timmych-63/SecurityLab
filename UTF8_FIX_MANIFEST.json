@@ -1,0 +1,11 @@
+{
+  "commit": "967dd6923dab8af0352310ef4e2b62bdad3d0baa",
+  "files": {
+    "securitylab/runner.py": "8e7c86d29d2209351886ef26047c60555575b957257310b45d1cfc32ed23ec1b",
+    "tests/test_securitylab.py": "6656224ae701a7eeb6c169aca8a7b119e4c81ecc0750878ef9d699bfb55b9ae8",
+    "docs/STATE.md": "81fd9e7980b3e9e6043e97d9b4ffe911668ae54febb83187e10ef69bcbd47026",
+    "docs/TEST_RESULTS.md": "0e6b4c560f8a99efadb3fcec781cec5b17e8239777b72e9a78ec4f8cb5bc47b3",
+    "docs/CHANGELOG.md": "0b628a5d0b04ab2c16c99dc7498bc1fb4bf3ec2101a71fa9064960cceb861b61",
+    "docs/test-utf8-output.txt": "a58b55b20467157c488916d63ddd454894c4f58daced49e94b2e1f41a23bc1d6"
+  }
+}

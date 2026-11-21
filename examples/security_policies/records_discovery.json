@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "context_id": "records-discovery",
+  "description": "Records service. Users read their own records. Read-only ownership checks; other operations are outside this profile.",
+  "identity": "trusted-test-user-header",
+  "actors": {
+    "alice": "user",
+    "bob": "user",
+    "charlie": "user"
+  },
+  "resources": [
+    {
+      "path": "/records/one",
+      "owner": "alice",
+      "reader_roles": [],
+      "expected_body_sha256": "7935b02d77c70bc29f69d3093c11211bb0b691a08f16ef8b731be5adc499328b"
+    },
+    {
+      "path": "/records/two",
+      "owner": "bob",
+      "reader_roles": [],
+      "expected_body_sha256": "8531a77fadaf01906bcdfa8603b5e15962270408a9c046cc1fce838c7ef71170"
+    }
+  ]
+}

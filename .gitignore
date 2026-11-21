@@ -1,9 +1,23 @@
+# Python
 __pycache__/
 *.pyc
+.pytest_cache/
 .venv/
 *.egg-info/
 build/
-dist/
+
+# Локальное состояние прогонов и машинные конфиги (в репозиторий не попадают)
 .securitylab/
 .env
 ai.local.toml
+_backup_S11_*/
+reports/
+
+# Зависимости интерфейса: собранный dist/ дашборда хранится в репозитории,
+# поэтому исключаем только чужие dist и node_modules
+node_modules/
+dist/
+!dashboard/dist/
+
+# Git-бандлы — транспортные артефакты истории, в репозитории не нужны
+*.bundle

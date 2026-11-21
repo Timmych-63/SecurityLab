@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "project": "SecurityLab",
+  "stage": "S6.2",
+  "date": "2026-11-09",
+  "base_commit": "e2ffcd3",
+  "head_commit": "f579f097d45b1e24cf266963a28a61b55d8f3080",
+  "package": "overlay plus self-contained Git bundle",
+  "installed_s61_windows_evidence": {
+    "tests": 22,
+    "skipped": 1,
+    "repo_inspect_python_api": "PASS",
+    "repo_inspect_project": "PASS"
+  },
+  "new_s62": {
+    "tests_local": 15,
+    "result": "PASS",
+    "windows": "NOT_TESTED"
+  },
+  "other_focused_tests_local": {
+    "repository": 22,
+    "blue_prompt": 5,
+    "sandbox_check": 7,
+    "reviewed_variants": 3
+  },
+  "legacy_suite": "NOT_CONFIRMED: long-running AI integration tests timed out in this environment",
+  "upgrade_from_s61": "PASS: existing SQLite run survives and new snapshot table is available",
+  "git_bundle_verify": "PASS: full history, clean clone and focused tests",
+  "security_caveats": [
+    "No external project code execution; scan is BLOCKED",
+    "Hashed copy is not a race-free atomic source snapshot",
+    "Local name-based secret exclusions are incomplete",
+    "Plans are descriptive only; build/start/test disabled",
+    "Snapshot is not a Git patch branch or container isolation"
+  ],
+  "files_sha256": {
+    "README.md": "78f8457b0e758d973129f978025133516f6ea5f1d7292d465d2f176b1981df7d",
+    "README_S6_2_RU.md": "4fca4244795d19e4b0774793eed16f40f46f3580ff8178cd4ea826920334e2ee",
+    "docs/STATE.md": "ab54ae4fe3e016b0b216e877ccf32e7c4c2ed09baa6f630d83c028923e2a1afb",
+    "docs/CHANGELOG.md": "f81a7b25e3cc5d2a86f16c3b4234419ef437e383c6263225b6d539c6d28e5974",
+    "docs/S6_2.md": "da14538f1f787be94e8a6ef6ace318dee686f2842b3ca9e01b018c739b10320b",
+    "securitylab/cli.py": "ab7f8356a3b141a4a055460ccb046c22041ae76d9c671f6616d45ce9841628c4",
+    "securitylab/repository.py": "b8ea2384b5a6d687a87410413f9e648bb690079aa2fd339d385aa11b48178dc3",
+    "securitylab/storage.py": "78b062ff73e8e813d6983f81eeb55a945f1e8145026122bb7e5cd4bc5602a8ed",
+    "securitylab/snapshots.py": "7eecd5cbf45985bb724bc61c4014f4d8b352584e21542962e7fd48effc3e9fbc",
+    "securitylab/profile_plan.py": "61dc4e13fe53df0215e1aa4824b42349b08f955bffb7ed24582a1bff358fffa1",
+    "tests/test_snapshots.py": "ed73960128f845ead702f9c53027781a6b7ddfc76c50c7ff2f97ebb218b3b2c5",
+    "SecurityLab_S6_2.bundle": "1c67ae0e31d54c6fa644897c2e91da2d8cabf80415abe9abc64f9608057616ea"
+  }
+}

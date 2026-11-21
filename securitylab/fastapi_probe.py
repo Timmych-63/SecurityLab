@@ -28,10 +28,11 @@ uvicorn.run('project:app', host='0.0.0.0', port=8000, workers=1,
 
 
 def run_fastapi_http_observation(folder: Path, payload: bytes, parsed: list[dict],
-                                 binding: dict, *, broker_factory, limits) -> dict:
+                                 binding: dict, *, broker_factory, limits, stop=None) -> dict:
     """Trusted broker receipt + independent HTTP observations, never a FIXED verdict."""
     broker = broker_factory(Path.cwd())
-    result = broker.run(payload, parsed, folder, binding=binding, limits=limits)
+    result = broker.run(payload, parsed, folder, binding=binding, limits=limits,
+                        **({'stop':stop} if stop is not None else {}))
     receipt = folder / 'docker_receipt.json'
     raw_receipt = receipt.read_bytes()
     if len(raw_receipt) > 1048576:

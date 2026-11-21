@@ -384,3 +384,8 @@
 
 /* тонкий скроллбар в тоне интерфейса */
 * { scrollbar-width: thin; scrollbar-color: var(--line2) transparent; }
+
+/* Execution completion must not look like a successful security check. */
+.stagerow[data-outcome='neutral']::before { background: var(--ink3); box-shadow: inset 0 0 0 2px transparent; }
+.stagerow[data-outcome='violation']::before { background: var(--warn); box-shadow: inset 0 0 0 2px transparent; }
+.stagerow[data-outcome='matched']::before { background: var(--mint); box-shadow: inset 0 0 0 2px transparent; }

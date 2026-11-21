@@ -1,0 +1,101 @@
+{
+  "stage": "S6.3d",
+  "base_commit": "b01378b",
+  "head_commit": "1ee7265",
+  "kind": "overlay-plus-complete-git-bundle",
+  "accepted_windows_baseline": "S6.3c",
+  "windows_s63d": "NOT_TESTED",
+  "selected_mocked_and_unit_tests": 123,
+  "files": [
+    {
+      "path": "README_S6_3d_RU.md",
+      "sha256": "a1475d75106e04af388df3b5dc864b89fec4e4da2058aa3101a5bcb06cfc7956",
+      "bytes": 2887
+    },
+    {
+      "path": "docs/CHANGELOG.md",
+      "sha256": "bbdac26bfe49d39085f843f6563e7f636fdaec0e56a48ad040819c06fa3a5ade",
+      "bytes": 9878
+    },
+    {
+      "path": "docs/S6_3d.md",
+      "sha256": "243192ced01f9b7cd33dfa5bcf8570145d38f125e04cdaec5493e30f6a311f7e",
+      "bytes": 5162
+    },
+    {
+      "path": "docs/STATE.md",
+      "sha256": "bb77450ee7bf0a2f3b1af5953b0466e7c2f63909b6e2ad3528dea88d68b7b7b1",
+      "bytes": 9786
+    },
+    {
+      "path": "docs/test-s63d-local.txt",
+      "sha256": "6fff789f386afe78f8b2dae6d51ce189fffc7bcf259e75478cee6440fd192bf3",
+      "bytes": 725
+    },
+    {
+      "path": "examples/s6_repos/python_fastapi_package/README.txt",
+      "sha256": "21aaf376f141857d87f9ad8dccf0e6edefaa42b615bdf44381249f40a7a1c186",
+      "bytes": 171
+    },
+    {
+      "path": "examples/s6_repos/python_fastapi_package/app/__init__.py",
+      "sha256": "dbf116e3626168504ff7c9fc17ab5152b148b02101e38428b2a364a1ff2cb649",
+      "bytes": 40
+    },
+    {
+      "path": "examples/s6_repos/python_fastapi_package/app/main.py",
+      "sha256": "09148e475947db764cdb54ff276e77c9ebac079bec2c603f6d8f6df383aeb9eb",
+      "bytes": 102
+    },
+    {
+      "path": "examples/s6_repos/python_fastapi_package/app/routes.py",
+      "sha256": "ca3b5d40ece01e0e70efb0b78f7d43a07e95598ff004872281833ad8cf64d8a4",
+      "bytes": 190
+    },
+    {
+      "path": "examples/s6_repos/python_fastapi_package/pyproject.toml",
+      "sha256": "82de709bcfa832d142711146462716933da911d4aa30a21b8be8deb0c25e644b",
+      "bytes": 129
+    },
+    {
+      "path": "securitylab/cli.py",
+      "sha256": "2a2488896f71065a1970af70bdcbcd22b4ef974add177415cde0f68308cb1354",
+      "bytes": 12167
+    },
+    {
+      "path": "securitylab/container_worker.py",
+      "sha256": "7ae8929fa358cc66f7115d7b8655d311ce3360c46c44655fb53bc959a505c252",
+      "bytes": 1728
+    },
+    {
+      "path": "securitylab/fastapi_probe.py",
+      "sha256": "ed3c475d8abfaf83f1d790dcb857271a94dc92ebf80dc509e5b9ed868922e147",
+      "bytes": 5519
+    },
+    {
+      "path": "securitylab/job_contract.py",
+      "sha256": "9411ff21c80d48091609190d49f224ae25f25a148759f3c3690ed2bf5cd98857",
+      "bytes": 2087
+    },
+    {
+      "path": "securitylab/package_probe.py",
+      "sha256": "8daa3346022cb654506541a73d1c94d9f77d679fe5b30c7310ae27dbe8aaed40",
+      "bytes": 9534
+    },
+    {
+      "path": "securitylab/profile_plan.py",
+      "sha256": "10351fa3a079bb7d9dab82accca504975dfb29157f89bcb476cb00df9d343b7c",
+      "bytes": 2909
+    },
+    {
+      "path": "tests/test_container_runner.py",
+      "sha256": "cfcbe176e4b93ab4c75c146a40bc349daf68ce7e77dd01bf14d7ca0d665754b1",
+      "bytes": 9900
+    },
+    {
+      "path": "tests/test_package_probe.py",
+      "sha256": "63bd44e8a610fe83179d01e9d2228417cefe21a9400425b39ffd09993de17a86",
+      "bytes": 10690
+    }
+  ]
+}

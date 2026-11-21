@@ -18,6 +18,8 @@ class AIConfig:
     context_tokens: int = 64000
     max_output_tokens: int = 2048
     timeout_seconds: int = 1200
+    frequency_penalty: float | None = None
+    presence_penalty: float | None = None
 
     def __post_init__(self):
         for field, pattern in [('model', r'[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}'),
@@ -35,6 +37,14 @@ class AIConfig:
             value = getattr(self, field)
             if type(value) is not int or not low <= value <= high:
                 raise PolicyError(f'Invalid AI {field}: required {low}..{high}')
+        # Optional OpenAI-compatible sampling knobs the model server actually
+        # implements on /v1/chat/completions (Ollama maps them onto its native
+        # repeat suppression). Unset means: send nothing, keep server defaults.
+        for field in ('frequency_penalty', 'presence_penalty'):
+            value = getattr(self, field)
+            if value is not None and (type(value) not in (int, float)
+                                      or isinstance(value, bool) or not 0 <= value <= 2):
+                raise PolicyError(f'Invalid AI {field}: optional number 0..2, or omit the key')
 
     def data(self):
         return asdict(self)

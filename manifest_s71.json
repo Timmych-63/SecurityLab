@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "release": "SecurityLab_S7_1",
+  "base_commit": "1ee7265",
+  "commit": "b6be634",
+  "format": "overlay + complete Git bundle",
+  "user_windows_verified": "S6.3d only",
+  "tests_local": "140 selected focused tests PASS; live S7.1 Docker not tested",
+  "files": {
+    "README_S7_1_RU.md": "e5aa4216bd3980005b8ef9286371df1d19b7967c2000c22a9ea3bc35d782cab0",
+    "docs/CHANGELOG.md": "eaee88b71db6c4af6f5a8989e3b8381b31b4d7e81dccae27d153ad0c3ff78feb",
+    "docs/STATE.md": "62fa65dcf69c8396e6b8aad5c210be2b123140f55e8c472283b1323aa4b15f90",
+    "docs/S7_1.md": "98851dc2e28f19cdd11b1cf3efe08a3c124e9e3d3a2a0a8e47a4064971d5aa10",
+    "docs/test-s71-local.txt": "b044ce2cb060159dd1348f3c5e88aa01383b57f9ecec8e6a62ec2b6c1c803e68",
+    "securitylab/cli.py": "9a201c74db248cff9285ebd4b4378705de7acf1123370189a87a91174d12c251",
+    "securitylab/http_runner.py": "1bbe9c90e92d926ecaf4d461f0452f8a14e60f27fff6b0115ea906afbe798a8a",
+    "securitylab/access_baseline.py": "fe787aa9068c0f6634c312c42e8acff3f5d4bc65651413f0813eae20951b0b8b",
+    "tests/test_access_baseline.py": "45c6fc37ebb0f87d29a523acc825906f55ee299c478d62f2661ccc6e4d03a1db",
+    "examples/s7_repos/authz_vulnerable/app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "examples/s7_repos/authz_vulnerable/app/main.py": "92364cca538ea65b2d90334694c3525058a31244d19f755c956822123791ebd5",
+    "examples/s7_repos/authz_fixed/app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "examples/s7_repos/authz_fixed/app/main.py": "77f901056f07a19627ff1834256d94fe7d5eaf967630a9b0461c5e5f19767f04",
+    "examples/security_policies/record_ownership.json": "705fccccbe1a7201e6a5d28707ece0bf01795c1a0efdf682556116a206758df8"
+  }
+}

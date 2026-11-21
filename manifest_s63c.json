@@ -1,0 +1,81 @@
+{
+  "stage": "S6.3c",
+  "base_commit": "deafff0",
+  "commit": "b01378b",
+  "kind": "overlay-plus-complete-git-bundle",
+  "real_windows_accepted": "S6.3b",
+  "new_fastapi_live_windows": "NOT_TESTED",
+  "selected_local_tests": 106,
+  "files": [
+    {
+      "path": "README_S6_3c_RU.md",
+      "bytes": 2533,
+      "sha256": "ddf814a7325bd4c5666eecc4f063da4890d8602f4cfbdf05d73512a39a772316"
+    },
+    {
+      "path": "docker/FastAPI.Dockerfile",
+      "bytes": 516,
+      "sha256": "e90c489b9b4e91e86b97d5af0877e5ff00d7c43f9535eeb1ea2b9cdecb85065a"
+    },
+    {
+      "path": "docs/CHANGELOG.md",
+      "bytes": 9107,
+      "sha256": "ad3cec6175b3f0d5e6e4348d9938f5913fc2b4c44a32fffbea1a85719e2a8e6d"
+    },
+    {
+      "path": "docs/S6_3c.md",
+      "bytes": 4737,
+      "sha256": "71060725a266faa8473c1e99278aaf15f00ff5700a749d0d3845da04fcf539d2"
+    },
+    {
+      "path": "docs/STATE.md",
+      "bytes": 9206,
+      "sha256": "efcf45fd226c662240410927981d428d944c97c4cad70b8cbcd83b5c6b1f1e86"
+    },
+    {
+      "path": "docs/test-s63c-local.txt",
+      "bytes": 99,
+      "sha256": "68f5b25371cf59a85dbf2162c881108f7abf032c074b8ae64c1861bc0c0dd257"
+    },
+    {
+      "path": "examples/s6_repos/python_fastapi_min/main.py",
+      "bytes": 205,
+      "sha256": "d502bcd8c161a5fb59d245b4069cecf8e956b1902e0ee50e00f21e79257160c8"
+    },
+    {
+      "path": "examples/s6_repos/python_fastapi_min/pyproject.toml",
+      "bytes": 114,
+      "sha256": "6d689f5df9b6332d0070412cd875a7cf7c79a584cfa4d8ba6e3bce837b07a5b2"
+    },
+    {
+      "path": "securitylab/cli.py",
+      "bytes": 11235,
+      "sha256": "82aa630985d9dfc08ea8cfcdfb8eed173ec45d2706d19e4d517bdf249d06b638"
+    },
+    {
+      "path": "securitylab/fastapi_probe.py",
+      "bytes": 5107,
+      "sha256": "07a6283a1f5740e493e9d0187d1f09847f540587539df47803b788cf9cc0b4cc"
+    },
+    {
+      "path": "securitylab/http_probe.py",
+      "bytes": 6174,
+      "sha256": "7c75e18b7adb5ac0d3c203bf3a07c8331a6a1bb3e417120fed9551c3e7485ecb"
+    },
+    {
+      "path": "securitylab/http_runner.py",
+      "bytes": 16541,
+      "sha256": "27cb700ebded3bb8da2650b485279a8e4df905e036395d60551bf40bc73257ee"
+    },
+    {
+      "path": "securitylab/profile_plan.py",
+      "bytes": 2729,
+      "sha256": "eeaefb5dfbb2eecae00e60cefa52414e5c592e5c31ee27ecef87d363d52b6d5d"
+    },
+    {
+      "path": "tests/test_fastapi_probe.py",
+      "bytes": 7482,
+      "sha256": "dac6e06a8f92c72ae41fcc49abf30aaa705325e195f2c767d2c32bbb8a38711f"
+    }
+  ]
+}

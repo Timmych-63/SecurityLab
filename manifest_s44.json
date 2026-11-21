@@ -1,0 +1,15 @@
+{
+  "commit": "ab85c1561a29b3c56bf7c10f98e0c7ee2fa8408c",
+  "base": "cb2b91c",
+  "validation": "122 tests PASS; after final workflow regression, 30 focused AI tests PASS; Docker mocked, live Qwen not run",
+  "files": {
+    "README_S4_4_RU.md": "564f5e46964826d92d33a965882dcce7c4e45f1f1464e855bf7bee3a057156bb",
+    "docs/S4_4.md": "0347801be816917df029da74253095de69b80d231cbc2f9f8374fd84954f589c",
+    "docs/test-s44-ai-output.txt": "e3bad3014b7936d6fe2f55b61c61146e2464e54a841246b2b2fb7897a636ac4e",
+    "docs/test-s44-output.txt": "0d2cd6e8ee2d5d52492ec467534597f1798802ea4738a6b41049ca18e4b8ed94",
+    "securitylab/ai_contract.py": "0432c2b4d5ac7a29567141c9a622d949b604d0e64fa0400208ecc9acb6539a6f",
+    "securitylab/ai_workflow.py": "e74e35d86c128b875de4277aaf4843a2face9a4cebd0675051f3eba733a62304",
+    "tests/test_ai.py": "a4db4de0fdf4f8e49134f172b4f103f6c72995beac7e30675caf2a93e7bbe402",
+    "tests/test_reviewed_variants.py": "d48ead1a8930ce2c0c6ddaa9b6553f5e55d1fd5df4acc01c3a488bbed7175dcd"
+  }
+}

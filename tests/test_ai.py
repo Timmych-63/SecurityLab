@@ -1,5 +1,8 @@
+import contextlib
+import io
 import json
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 from securitylab.ai_contract import request, prompt, strict_json, validate_proposal, digest, HERMES_REVISION, MODEL, MODEL_DIGEST
@@ -227,3 +230,201 @@ class IndependentAttemptTests(unittest.TestCase):
         a=OneAgent.instances[0]
         self.assertIn('Allowed keys: file, content',a.conversation['system_message'])
         self.assertEqual(a.kwargs['request_overrides']['response_format'],{'type':'json_object'})
+
+class TransportRejectionTests(unittest.TestCase):
+    """Live run #1: truncated/degenerate replies must become corrective attempts."""
+    def _invoke(self,agent):
+        err=io.StringIO()
+        with contextlib.redirect_stderr(err):
+            with self.assertRaises(PolicyError) as ctx:
+                invoke(request('red'),agent)
+        return err.getvalue(),str(ctx.exception)
+    def test_truncated_reply_becomes_rejected_attempt_with_feedback(self):
+        class TruncatedAgent(Agent):
+            tool_list=[];messages=[]
+            def run_conversation(self,**kwargs):
+                return {'error':"\u26a0\ufe0f Response truncated (finish_reason='length') - model hit max output tokens",
+                        'messages':[]}
+        captured=[]
+        err=io.StringIO()
+        with contextlib.redirect_stderr(err):
+            with self.assertRaises(PolicyError) as ctx:
+                invoke(request('red'),TruncatedAgent,captured.append)
+        self.assertEqual(captured,[])  # garbage is not passed off as a proposal
+        self.assertIn('Hermes conversation failed: response truncated',str(ctx.exception))
+        lines=err.getvalue().splitlines()
+        raw=[l for l in lines if l.startswith('AI_RESPONSE_JSON=')]
+        attempt=[l for l in lines if l.startswith('AI_ATTEMPT_JSON=')]
+        self.assertEqual(len(raw),1);self.assertEqual(len(attempt),1)
+        feedback=json.loads(raw[0][len('AI_RESPONSE_JSON='):])
+        decision=json.loads(attempt[0][len('AI_ATTEMPT_JSON='):])
+        self.assertEqual(decision['status'],'REJECTED');self.assertEqual(decision['attempt'],1)
+        self.assertEqual(decision['role'],'red');self.assertIn('truncated',decision['reason'])
+        self.assertTrue(isinstance(feedback,str) and 0<len(feedback.encode())<=4000)
+    def test_degenerate_repetition_is_classified(self):
+        class DegenerateAgent(Agent):
+            tool_list=[];messages=[]
+            def run_conversation(self,**kwargs):
+                return {'error':'\U0001f501 Response dominated by repeated text - stopping instead of continuing a degenerate response.','messages':[]}
+        err,error_text=self._invoke(DegenerateAgent)
+        self.assertIn('response degenerated into repeated text',error_text)
+        self.assertIn('AI_ATTEMPT_JSON=',err)
+    def test_empty_reply_is_also_recoverable(self):
+        class EmptyAgent(Agent):
+            tool_list=[];messages=[]
+            def run_conversation(self,**kwargs):
+                return {'final_response':None,'messages':[]}
+        err,error_text=self._invoke(EmptyAgent)
+        self.assertIn('Hermes conversation failed',error_text)
+        self.assertIn('AI_ATTEMPT_JSON=',err)
+    def test_worker_failure_keeps_normal_rejection_path(self):
+        # A real validator rejection in S7.2 still prints the raw response, not
+        # feedback; research tasks instead add a bounded note (see below).
+        class InvalidAgent(Agent):
+            tool_list=[];messages=[];reply='not JSON'
+        captured=[]
+        err=io.StringIO()
+        with contextlib.redirect_stderr(err):
+            with self.assertRaises(PolicyError):
+                invoke(request('red'),InvalidAgent,captured.append)
+        self.assertEqual(captured,['not JSON'])
+
+class ResearchContractRejectionTests(unittest.TestCase):
+    """Live run #3: a research contract rejection fed the raw response (up to
+    16000 bytes) into the 4000-byte retry field and stopped the run with
+    'Invalid research corrective feedback'. The worker must compose bounded
+    corrective feedback for research tasks instead."""
+    @classmethod
+    def setUpClass(cls):
+        from securitylab.research_contract import make_request
+        mapping={'entry':'app/main.py','files':['app/main.py'],
+                 'routes':[{'method':'GET','path':'/records/one','file':'app/main.py'}],
+                 'dependencies':['fastapi']}
+        cls.req=make_request('app/main.py',mapping,
+                             '# Документация\nПриложение отдаёт записи.',
+                             [],{'decisions_left':12,'requests_left':40,'seconds_left':600},['alice','bob'])
+    def _invoke(self,reply):
+        class InvalidAgent(Agent):
+            tool_list=[];messages=[]
+        InvalidAgent.reply=reply
+        captured=[]
+        err=io.StringIO()
+        def capture(raw):  # mirror the real worker wiring: main() prints the raw reply
+            captured.append(raw)
+            print('AI_RESPONSE_JSON='+json.dumps(raw,ensure_ascii=True),file=sys.stderr)
+        with contextlib.redirect_stderr(err):
+            with self.assertRaises(PolicyError):
+                invoke(self.req,InvalidAgent,capture)
+        return err.getvalue(),captured
+    def _note(self,stderr):
+        raw=[l for l in stderr.splitlines() if l.startswith('AI_RESPONSE_JSON=')]
+        self.assertGreaterEqual(len(raw),2)  # raw receipt capture plus composed note
+        return json.loads(raw[-1][len('AI_RESPONSE_JSON='):])
+    def test_big_invalid_reply_gets_bounded_feedback(self):
+        stderr,captured=self._invoke('x'*8000)
+        self.assertEqual(captured,['x'*8000])  # receipt keeps the raw response
+        note=self._note(stderr)
+        self.assertIn('exactly one compact valid JSON',note)
+        self.assertLessEqual(len(note.encode()),4000)
+    def test_validation_failure_reason_reaches_feedback(self):
+        bad=json.dumps({'action':'read','file':'app/main.py','start':1,'count':10,'extra':'y'*6000})
+        stderr,captured=self._invoke(bad)
+        note=self._note(stderr)
+        self.assertIn('read requires',note)
+        self.assertLessEqual(len(note.encode()),4000)
+    def test_rejection_seam_builds_valid_research_retry(self):
+        from securitylab.hermes_adapter import rejected_reply
+        from securitylab.research_contract import prompt as research_prompt
+        from securitylab.research_contract import retry_request
+        stderr,_=self._invoke(json.dumps({'action':'read','file':'app/main.py','start':1,'count':10,'extra':'y'*6000}))
+        previous,reason,proposal=rejected_reply(stderr,'red',1)
+        self.assertIn('exactly one compact valid JSON',previous)
+        self.assertEqual(proposal.get('action'),'read')  # rejected proposal surfaces for the auto-probe
+        retry=retry_request(self.req,previous)
+        self.assertIn('CORRECTIVE ATTEMPT',research_prompt(retry))
+    def test_blue_contract_rejection_also_bounded(self):
+        from securitylab.hermes_adapter import rejected_reply
+        from securitylab.research_contract import blue_prompt, make_blue_request, retry_request
+        blue=make_blue_request('app/main.py',{'app/main.py':'x = 1\n'},
+                               [{'id':'deny-1','file':'app/main.py','path':'/records/one','actor':'bob',
+                                 'expected_status':403,'observed_status':200,
+                                 'description':'foreign read','basis':'documentation'}],
+                               '# Документация\nЗаписи может читать только владелец.',
+                               [{'path':'/records/one','actor':'bob','actual_status':200}])
+        class BadBlueAgent(Agent):
+            tool_list=[];messages=[]
+        BadBlueAgent.reply=json.dumps({'files':{'app/main.py':'x = 2\n','app/other.py':'z = 1\n'}})
+        err=io.StringIO()
+        with contextlib.redirect_stderr(err):
+            with self.assertRaises(PolicyError):
+                invoke(blue,BadBlueAgent)
+        previous,reason,proposal=rejected_reply(err.getvalue(),'blue',1)
+        self.assertEqual(proposal,{'files':{'app/main.py':'x = 2\n','app/other.py':'z = 1\n'}})
+        retry=retry_request(blue,previous)
+        self.assertIn('CORRECTIVE ATTEMPT',blue_prompt(retry))
+    def test_http_schema_rejection_feedback_shows_canonical_shape(self):
+        # Live run #5: checks carrying extra keys (method copied from the ROUTES
+        # dump) were rejected twice under a generic note; the corrective note
+        # must repeat the reason and the exact check shape instead.
+        bad=json.dumps({'action':'http','checks':[{'path':'/records/one','actor':'bob','method':'GET'}]})
+        stderr,captured=self._invoke(bad)
+        note=self._note(stderr)
+        self.assertIn('Each http check needs exactly',note)
+        self.assertIn('"checks":[{"path":"/records/one","actor":null}]',note)
+        self.assertLessEqual(len(note.encode('utf-8')),2000)
+        from securitylab.research_contract import prompt as research_prompt, retry_request
+        retry=retry_request(self.req,note)
+        self.assertIn('CORRECTIVE ATTEMPT',research_prompt(retry))
+
+class ResearchAttemptTransport(DockerTransport):
+    """First starts die with the transport-level REJECTED reply seen in the live run."""
+    def __init__(self,fail_times=1):
+        super().__init__();self.starts=0;self.fail_times=fail_times;self.requests=[]
+        self.feedback=('Your previous response was rejected: response truncated: model hit '
+                       'the output token limit. Reply again with exactly one compact valid '
+                       'JSON object exactly as prescribed by the schema.')
+    def __call__(self,argv,cwd,limits,**kwargs):
+        r=super().__call__(argv,cwd,limits,**kwargs)
+        args=argv[3:] if '--host' in argv else argv[1:]
+        if args[0]=='start':
+            self.starts+=1
+            req=json.loads(kwargs['input_data']);self.requests.append(req)
+            if self.starts<=self.fail_times:
+                r.returncode=2;r.stdout=''
+                r.stderr=('AI_RESPONSE_JSON='+json.dumps(self.feedback)+'\nAI_ATTEMPT_JSON='+
+                          json.dumps({'role':'red','attempt':self.starts,'status':'REJECTED',
+                                      'reason':"\u26a0\ufe0f Response truncated (finish_reason='length') - model hit max output tokens"}))
+            else:
+                r.stdout=json.dumps(envelope(req,{'action':'read','file':'app/main.py','start':1,'count':10}))
+        if args[0]=='inspect' and '--format' in args:
+            state=json.loads(r.stdout);state['ExitCode']=2 if self.starts<=self.fail_times else 0;r.stdout=json.dumps(state)
+        return r
+class ResearchTransportRetryTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from securitylab.research_contract import make_request
+        mapping={'entry':'app/main.py','files':['app/main.py'],
+                 'routes':[{'method':'GET','path':'/records/one','file':'app/main.py'}],
+                 'dependencies':['fastapi']}
+        cls.req=make_request('app/main.py',mapping,
+                             '# \u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430\u0446\u0438\u044f\n\u041f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u043e\u0442\u0434\u0430\u0451\u0442 \u0437\u0430\u043f\u0438\u0441\u0438.',
+                             [],{'decisions_left':12,'requests_left':40,'seconds_left':600},['alice','bob'])
+    def test_truncated_attempt_retries_with_feedback_then_continues(self):
+        with tempfile.TemporaryDirectory() as d:
+            fake=ResearchAttemptTransport(fail_times=1)
+            value,record=HermesAdapter(Path(d),Path(d)/'calls',fake).ask(self.req)
+            self.assertEqual(value,{'action':'read','file':'app/main.py','start':1,'count':10})
+            self.assertEqual(record['attempt'],2);self.assertEqual(fake.starts,2)
+            self.assertEqual(fake.requests[1].get('retry'),fake.feedback)
+            records=[json.loads(p.read_text()) for p in (Path(d)/'calls').glob('*.json')]
+            self.assertEqual({r['status'] for r in records},{'REJECTED','PROPOSED'})
+            rejected=[r for r in records if r['status']=='REJECTED'][0]
+            self.assertIn('truncated',rejected['error']);self.assertEqual(rejected['cleanup'],'PASS')
+    def test_second_truncated_attempt_stops_with_reason(self):
+        with tempfile.TemporaryDirectory() as d:
+            fake=ResearchAttemptTransport(fail_times=2)
+            with self.assertRaises(PolicyError) as ctx:
+                HermesAdapter(Path(d),Path(d)/'calls',fake).ask(self.req)
+            self.assertEqual(fake.starts,2)
+            self.assertIn('truncated',str(ctx.exception))
+            self.assertIn('call receipt',str(ctx.exception))

@@ -1,0 +1,12 @@
+services:
+  model:
+    environment:
+      OLLAMA_CONTEXT_LENGTH: "64000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+

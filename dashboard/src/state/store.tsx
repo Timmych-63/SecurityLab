@@ -110,6 +110,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setToasts((ts) => ts.filter((t) => t.id !== id))
   }, [])
 
+  const reportConnection = useCallback((ok: boolean) => setConnectionLost(!ok), [])
+
   const bumpData = useCallback(() => setDataVersion((v) => v + 1), [])
 
   // переключение на backend живёт до перезагрузки страницы — после
@@ -174,7 +176,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     connectBackend,
     disconnectBackend,
     connectionLost,
-    reportConnection: (ok) => setConnectionLost(!ok),
+    reportConnection,
     selectedAiConfigId,
     setSelectedAiConfigId,
     toasts,

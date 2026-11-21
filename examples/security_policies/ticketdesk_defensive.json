@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "context_id": "ticketdesk-defensive",
+  "description": "Ticket service: users read their own tickets and comments; manager/admin may read all. Known users may create tickets; manager/admin change status. This profile evaluates only GET reads. X-Test-User simulates a trusted identity gateway.",
+  "identity": "trusted-test-user-header",
+  "actors": {
+    "alice": "user",
+    "bob": "user",
+    "mira": "manager",
+    "admin": "admin"
+  },
+  "resources": [
+    {
+      "path": "/tickets/101",
+      "owner": "alice",
+      "reader_roles": [
+        "manager",
+        "admin"
+      ],
+      "expected_body_sha256": "55d8d759fe8ee66bf2009ed4ce56ff3e0c40718870908f5d8c9bc31c8c41faf5"
+    },
+    {
+      "path": "/tickets/101/comments",
+      "owner": "alice",
+      "reader_roles": [
+        "manager",
+        "admin"
+      ],
+      "expected_body_sha256": "35154efc077d8695c4bd7c28da84a3503940ec3bd00b0380089097b7c51afb77"
+    },
+    {
+      "path": "/tickets/202",
+      "owner": "bob",
+      "reader_roles": [
+        "manager",
+        "admin"
+      ],
+      "expected_body_sha256": "abd52fa83c6d05a80a60b3b49e4b5d40ddda7c57132717be0ce252225229bd4a"
+    },
+    {
+      "path": "/tickets/202/comments",
+      "owner": "bob",
+      "reader_roles": [
+        "manager",
+        "admin"
+      ],
+      "expected_body_sha256": "58e289522477be175311e24c7140c52a66a9d74da970dcd4b37185b00c0c8c02"
+    }
+  ],
+  "profile": "defensive-review-v1",
+  "regressions": [
+    {
+      "path": "/tickets/101",
+      "actor": null,
+      "expected_status": 401,
+      "expected_body_sha256": "8f399debe52f271e56918a3ef03cd90d60776f7c972e6807b1ef2a7437c1040c"
+    },
+    {
+      "path": "/tickets/999",
+      "actor": "alice",
+      "expected_status": 404,
+      "expected_body_sha256": "37ec4665a8102d115ffd1ac20dae94c98b4dac64b0c1a68228aa2a531caeb35d"
+    }
+  ]
+}

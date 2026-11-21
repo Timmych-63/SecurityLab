@@ -7,13 +7,26 @@ import { DailyBars, DurationLine } from '../components/charts'
 import { fmtDateTime, fmtDuration } from '../lib/format'
 
 const MODE_LABEL: Record<string, string> = {
-  ai_red_blue: 'Red/Blue · AI',
-  S7_2_ACCESS_AI_SINGLE_MODULE: 'Red/Blue · AI · S7.2',
-  smoke_only: 'smoke',
+  ai_red_blue: 'Анализ и исправление · ИИ',
+  S7_2_ACCESS_AI_SINGLE_MODULE: 'Анализ и исправление · один файл',
+  S10_DEFENSIVE_REVIEW: 'Защитное ревью · функциональные тесты',
+  S9_ACCESS_DISCOVERY_PACKAGE: 'Поиск сценариев · контроль доступа',
+  S9_ACCESS_AI_PACKAGE: 'Анализ и исправление · несколько файлов',
+  S11_RESEARCH_CYCLE: 'Самостоятельное исследование',
+  smoke_only: 'Проверка запуска',
 }
 
 const selectCls =
   'fieldctl h-10 text-[13px]'
+
+const Filter = ({ label, value, onChange, children }: { label: string; value: string; onChange: (v: string) => void; children: React.ReactNode }) => (
+  <label className="flex flex-col gap-1.5">
+    <span className="overline">{label}</span>
+    <select className={selectCls} value={value} onChange={(e) => onChange(e.target.value)}>
+      {children}
+    </select>
+  </label>
+)
 
 export function Runs({ navigate }: { navigate: (to: string) => void }) {
   const { adapter, nowMs, dataVersion, liveRun, mode, reportConnection, connectionLost } = useStore()
@@ -96,14 +109,6 @@ export function Runs({ navigate }: { navigate: (to: string) => void }) {
   const currentStage = (r: Run) => r.stages.find((s) => s.state === 'running' || s.state === 'wait_model')
   const duration = (r: Run) => r.timingKnown === false ? 'нет данных' : fmtDuration(r.startedAt, r.finishedAt ?? new Date(nowMs).toISOString())
 
-  const Filter = ({ label, value, onChange, children }: { label: string; value: string; onChange: (v: string) => void; children: React.ReactNode }) => (
-    <label className="flex flex-col gap-1.5">
-      <span className="overline">{label}</span>
-      <select className={selectCls} value={value} onChange={(e) => onChange(e.target.value)}>
-        {children}
-      </select>
-    </label>
-  )
 
   return (
     <>

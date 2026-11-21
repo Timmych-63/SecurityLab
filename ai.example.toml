@@ -7,3 +7,8 @@ network = "securitylab-ai-private"
 context_tokens = 64000
 max_output_tokens = 2048
 timeout_seconds = 1200
+# Optional repetition-suppression knobs (Ollama applies them on /v1/chat/completions).
+# Recommended for qwen3.5:2b against degenerate repeated output; omit the keys to
+# keep server defaults. Set them in ai.local.toml, not here:
+# frequency_penalty = 0.4
+# presence_penalty = 0.2

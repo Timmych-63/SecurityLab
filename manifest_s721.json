@@ -1,0 +1,12 @@
+{
+  "base_commit": "8d389d6",
+  "commit": "1bb14591fa3da3894391f60b8eca8ddb4eaacf00",
+  "tests": "174 passed; mocked Hermes/Docker, real Git; Windows acceptance pending",
+  "files": {
+    "securitylab/access_ai.py": "a4a1ce75bf5f5b6f18cb8090b087570ad3e06b551f6184a0bd32f2d8a33acf86",
+    "securitylab/access_contract.py": "e03165e619c54149dad1d475465573260fd4b1a2862a7e1b7fda66c9083c21f4",
+    "tests/test_access_ai.py": "1c701c7c97e021d12eda44761f6a1711a986aed58b62afe1aa5a9fc62871d586",
+    "docs/README_S7_2_1_RU.md": "da62cbf59a42f7c55f22ddc509d93c649ffc21246ffbc741e160dc50f8570b1e",
+    "docs/SecurityLab_FULL_HANDOFF_S7_2_1.md": "229eec14c26035f92cc37fb98d91eeab19d5685cdea334c3ffd7926e07832d05"
+  }
+}

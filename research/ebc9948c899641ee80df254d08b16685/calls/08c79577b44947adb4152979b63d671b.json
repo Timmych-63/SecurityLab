@@ -1,0 +1,72 @@
+{
+  "id": "08c79577b44947adb4152979b63d671b",
+  "role": "red",
+  "request_sha256": "f25163e5e77e7b0f2a3527cf1c73c548bf1913d925304ac3af3205bc07f63ba4",
+  "image_id": "sha256:16143cb45fdca8d88126b5e08a20ff69220f233502daf34ecf01bc076a172cf8",
+  "container": "securitylab-ai-08c79577b44947adb4152979b63d671b",
+  "attempt": 1,
+  "status": "PROPOSED",
+  "cleanup": "PASS",
+  "trust": "AI proposal, not vulnerability evidence",
+  "ai_config": {
+    "model": "qwen3.5:2b",
+    "model_digest": "0689d44085e06d165161a8a9a1731344278cfb5aade63a3c3dbdb48ab54b130a",
+    "server_url": "http://model:11434",
+    "network": "securitylab-ai-private",
+    "context_tokens": 64000,
+    "max_output_tokens": 2048,
+    "timeout_seconds": 1200,
+    "frequency_penalty": null,
+    "presence_penalty": null
+  },
+  "ai_config_sha256": "2e676704e5e360e40ca34a5521875c8ae0ac2d15d8d743456d430ea32a4c02dc",
+  "execution": {
+    "command": [
+      "docker",
+      "--host",
+      "npipe:////./pipe/dockerDesktopLinuxEngine",
+      "start",
+      "-a",
+      "-i",
+      "securitylab-ai-08c79577b44947adb4152979b63d671b"
+    ],
+    "returncode": 0,
+    "stdout": "{\"schema_version\": 1, \"role\": \"red\", \"request_sha256\": \"f25163e5e77e7b0f2a3527cf1c73c548bf1913d925304ac3af3205bc07f63ba4\", \"hermes_revision\": \"e075441241b8d626789b4aae0e376f86eabf824d\", \"model\": \"qwen3.5:2b\", \"model_digest\": \"0689d44085e06d165161a8a9a1731344278cfb5aade63a3c3dbdb48ab54b130a\", \"tools\": [], \"proposal\": {\"action\": \"http\", \"checks\": [{\"path\": \"/health\", \"actor\": \"admin\"}]}}\n",
+    "stderr": "AI_RESPONSE_JSON=\"{\\\"action\\\":\\\"http\\\",\\\"checks\\\":[{\\\"path\\\":\\\"/health\\\",\\\"actor\\\":\\\"admin\\\"}]}\"\nAI_ATTEMPT_JSON={\"role\": \"red\", \"attempt\": 1, \"status\": \"ADMITTED\"}\n",
+    "timed_out": false,
+    "cancelled": false,
+    "truncated": false,
+    "duration": 160.2315
+  },
+  "container_state": {
+    "Status": "exited",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-11-17T13:06:17.474308365Z",
+    "FinishedAt": "2026-11-17T13:08:57.272783074Z"
+  },
+  "response": {
+    "schema_version": 1,
+    "role": "red",
+    "request_sha256": "f25163e5e77e7b0f2a3527cf1c73c548bf1913d925304ac3af3205bc07f63ba4",
+    "hermes_revision": "e075441241b8d626789b4aae0e376f86eabf824d",
+    "model": "qwen3.5:2b",
+    "model_digest": "0689d44085e06d165161a8a9a1731344278cfb5aade63a3c3dbdb48ab54b130a",
+    "tools": [],
+    "proposal": {
+      "action": "http",
+      "checks": [
+        {
+          "path": "/health",
+          "actor": "admin"
+        }
+      ]
+    }
+  }
+}

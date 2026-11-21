@@ -178,7 +178,8 @@ def worker_lock(root: Path):
                 import fcntl
                 fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError as e:
-            raise PolicyError("Another worker owns this state directory") from e
+            raise PolicyError('Another worker owns this state directory (locked: ' + str(root) +
+                              '); stop the previous dashboard or CLI process using it, then start again') from e
         try:
             yield
         finally:

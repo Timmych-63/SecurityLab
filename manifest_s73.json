@@ -1,0 +1,18 @@
+{
+  "base": "S7.2.1 (1bb1459)",
+  "commit": "64ff23233e3ec82f079f7135916c1a51b6447338",
+  "validation": "182 local tests passed; 51 access tests; Windows S7.3 pending",
+  "files": {
+    "docs/README_S7_3_RU.md": "8bbe57b06b319ac5c7008976b72538f54c65f8cf2b95a4d002362d9dd70316ac",
+    "docs/ROADMAP_V1_RU.md": "aeb5eb312219a7cef93308674061b086568a4e1a60248fb4ae7040319298c7d8",
+    "docs/SecurityLab_FULL_HANDOFF_S7_3.md": "728ef4bc0ecff4285c16d30c88facc7386e68c285bea69c2e4dc9206400cba08",
+    "examples/security_policies/record_ownership_extended.json": "f917c9119361092d65db9c806cfc57cc48a11aefe0f3930899d34915424f1892",
+    "securitylab/access_baseline.py": "b97af66f36d3d6d8e70cc7c16ed730476550784c41c30f5e7706bd4507dd2cc0",
+    "securitylab/access_contract.py": "4e682025f3e30c37a93777cb2fa289be48e13a4a74b3cba9487cddb97d12cfdb",
+    "securitylab/http_runner.py": "1b2eeaccb7d01669fc921b17203c8e7f0ae481c3875eb134e3ded620a228f145",
+    "tests/test_access_ai.py": "08ec6aae39f9eda40c770037b5601507417b2aade7b964cf3b2d09a6458ae0ad",
+    "tests/test_access_baseline.py": "d76abbaf3d640fd42ddbce27183bb6d121040ed77353a989e67cfd51deba6a83",
+    "tests/test_access_regression.py": "cee12a2d9ee0047a8adf145e251b2849c62216cdcf938013e3197d4073917ee2",
+    "securitylab/access_ai.py": "a4a1ce75bf5f5b6f18cb8090b087570ad3e06b551f6184a0bd32f2d8a33acf86"
+  }
+}

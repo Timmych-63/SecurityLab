@@ -1,0 +1,42 @@
+{
+  "id": "ebc9948c899641ee80df254d08b16685",
+  "input": {
+    "projectId": "b2e197751e7542efb816e0f919395552",
+    "snapshotId": "97e86117050d43f987969dec4e36d570",
+    "service": ".",
+    "entryModule": "app/main.py",
+    "profileId": "research-v1",
+    "preparationId": "1b7f67b7820f4c9ba2c9f55c1de490f0",
+    "aiConfigId": "qwen-local",
+    "stateDir": "C:\\Users\\User\\Downloads\\Разные версии\\SecurityLab_Z\\SecurityLab_v0.1.0_M1_M2"
+  },
+  "ai_config": {
+    "model": "qwen3.5:2b",
+    "model_digest": "0689d44085e06d165161a8a9a1731344278cfb5aade63a3c3dbdb48ab54b130a",
+    "server_url": "http://model:11434",
+    "network": "securitylab-ai-private",
+    "context_tokens": 64000,
+    "max_output_tokens": 2048,
+    "timeout_seconds": 1200,
+    "frequency_penalty": null,
+    "presence_penalty": null
+  },
+  "ai_config_sha256": "2e676704e5e360e40ca34a5521875c8ae0ac2d15d8d743456d430ea32a4c02dc",
+  "status": "BLOCKED",
+  "created": 1794920776.4282384,
+  "preparation": {
+    "id": "1b7f67b7820f4c9ba2c9f55c1de490f0",
+    "budget": {
+      "seconds": 3600,
+      "decisions": 12,
+      "requests": 60
+    },
+    "actors": {
+      "alice": "user",
+      "bob": "user",
+      "admin": "admin"
+    }
+  },
+  "error": "Invalid research corrective feedback",
+  "finished": 1794921710.6289144
+}

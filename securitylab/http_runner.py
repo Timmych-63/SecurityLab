@@ -194,7 +194,7 @@ class HTTPDockerBroker(DockerBroker):
         return details
 
     def run(self, payload: bytes, checks: list[dict], folder: Path, *, binding: dict,
-            limits=Limits()) -> dict:
+            limits=Limits(), stop=None) -> dict:
         parse_job(payload)
         if not isinstance(checks, list) or not 1 <= len(checks) <= 8:
             raise PolicyError('Invalid HTTP check collection')
@@ -229,23 +229,30 @@ class HTTPDockerBroker(DockerBroker):
         attachment = None
         cleanup_errors = []
         try:
+            def checkpoint():
+                if stop is not None and stop(): raise PolicyError('HTTP verification cancelled by operator')
+            checkpoint()
             net_attempted = True
             self.call(['network','create','--driver','bridge','--internal',
                        '--label','securitylab.ephemeral=true',network])
             self._inspect_network(network)
+            checkpoint()
             target_attempted = True
             self.call(http_create_args(self.target_image_id,target,network,target=True))
             self._inspect_container(target,network,expected_image_id=self.target_image_id)
+            checkpoint()
             verifier_attempted = True
             self.call(http_create_args(self.image_id,verifier,network,target=False,contract_b64=b64))
             self._inspect_container(verifier,network)
             # Service transport: source only via stdin, not env, volumes or host shell.
+            checkpoint()
             attachment = self.attachment_cls(self.prefix + ['start','--attach','--interactive',target],
                                              self.cwd, payload)
             # Run a fixed independent HTTP client. It accepts only bounded contract JSON.
             r = self.call(['start','--attach',verifier],check=False,
                           limits=Limits(timeout=min(120,max(30,limits.timeout)),
-                                        output_bytes=min(65536,limits.output_bytes)))
+                                        output_bytes=min(65536,limits.output_bytes)),
+                          **({'stop':stop} if stop is not None else {}))
             attachment.healthy_transport()
             if r.timed_out or r.cancelled or r.truncated:
                 raise PolicyError('HTTP verifier timed out, cancelled or exceeded output limit')

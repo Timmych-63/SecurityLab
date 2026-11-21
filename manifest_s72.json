@@ -1,0 +1,18 @@
+{
+  "release": "S7.2",
+  "base_commit": "b6be634",
+  "head_commit": "8d389d6",
+  "installation": "Overlay on S7.1, do not overwrite .securitylab; rebuild Hermes image only",
+  "files": {
+    "securitylab/cli.py": "9abd3a999111f6cc3c681451cba0d0a6d93bfc56b98d89013b3d4e40f631e66e",
+    "securitylab/hermes_adapter.py": "26c9d3bc7ef63f5c2f7779dbf590764232227d6840eab31742a93450748e1d06",
+    "securitylab/hermes_worker.py": "1ae4951244436cf9d2efbd0517934a1c3de656e7c897bf782e845175c8a6b0be",
+    "securitylab/access_ai.py": "c485d7f26270287df72977f42725fcae87f3097905c088aae41e9d009380e933",
+    "securitylab/access_contract.py": "005fd6cc71923edbd9bd3bd6454d57250cd9a32037391ae7d2d5ff18e959fe21",
+    "securitylab/proposal_modes.py": "cd84e733e99f0af21bfce766bf581f4f58a58185d814febe0fef1352393b2ba1",
+    "tests/test_access_ai.py": "05d5c5e312aab2d8b3061646d6c4717e705ba97195d6e31dc4654e49f88d7f5b",
+    "docs/README_S7_2_RU.md": "d7c1f5717a46fb4f1531168552ab14d95363e4a7ebddaf794d760a5a275c2b53"
+  },
+  "bundle_sha256": "1a923ad6e33f5f2cb9617741705fe2064e815494993066b9429665c7c3eb5fb5",
+  "tests": "18 new unit/mocked tests PASS; existing selected 143 PASS in separate runs; real S7.2 Windows E2E not yet checked"
+}

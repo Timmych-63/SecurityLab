@@ -5,6 +5,8 @@ import type {
   Policy,
   PreflightResult,
   Project,
+  ResearchPreparationInput,
+  ResearchPreparationResult,
   Run,
   SecurityLabAdapter,
   AiConfig,
@@ -93,7 +95,7 @@ function buildDemoRun(input: NewRunInput): Run {
     service: input.service,
     entryModule: input.entryModule,
     profileId: input.profileId,
-    policyId: input.policyId,
+    policyId: input.policyId ?? "",
     aiConfigId: input.aiConfigId,
     stateDir: input.stateDir,
     mode: 'ai_red_blue',
@@ -217,6 +219,15 @@ export class DemoAdapter implements SecurityLabAdapter {
     }
   }
 
+  async prepareResearch(_input: ResearchPreparationInput): Promise<ResearchPreparationResult | BackendRefusal> {
+    await delay(300)
+    return {
+      ok: false,
+      reason:
+        'Деморежим: подготовка исследования выполняет ядро SecurityLab (POST /api/research/prepare) — оно проверяет снимок, статическую карту и сохраняет копии входных данных с хешами. Браузер не может этого выполнить, поэтому операция отклонена.',
+    }
+  }
+
   async listRuns(filters?: RunFilters): Promise<Run[]> {
     await delay(250)
     let runs = this.allRuns()
@@ -317,25 +328,24 @@ export class DemoAdapter implements SecurityLabAdapter {
 /* ---------- HttpAdapter: заготовка под предложенные endpoint ---------- */
 
 /**
- * Карта «действие UI → предлагаемый endpoint». Реализация сознательно
- * не подключена: без реального backend она выдавала бы несуществующие
- * серверные действия. Включается в screens/Integration после интеграции.
+ * Фактическая карта Python API S8.2. Не является обещанием универсального сканирования.
  */
 export const ENDPOINTS = [
-  { action: 'Список проектов и снимков', module: 'storage.py / cli.py', endpoint: 'GET /api/projects, GET /api/projects/{id}/snapshots' },
-  { action: 'Регистрация проекта по пути', module: 'cli.py — приём репозитория', endpoint: 'POST /api/projects' },
-  { action: 'Создание снимка', module: 'cli.py / storage.py', endpoint: 'POST /api/projects/{id}/snapshots' },
-  { action: 'Профили и политики (чтение)', module: 'access_ai.py — политика оператора', endpoint: 'GET /api/policies' },
-  { action: 'AI-конфигурации', module: 'ai_config.py — разбор TOML', endpoint: 'GET /api/ai-configs' },
-  { action: '«Файл конфигурации валиден»', module: 'ai_config.py', endpoint: 'POST /api/ai-configs/{id}/validate' },
-  { action: '«Модель отвечает»', module: 'hermes_adapter.py', endpoint: 'POST /api/ai-configs/{id}/ping-model' },
-  { action: 'Предпроверка готовности', module: 'cli.py — Docker, образы', endpoint: 'POST /api/preflight' },
-  { action: 'Создание запуска', module: 'ai_workflow.py — сценарий Red/Blue', endpoint: 'POST /api/runs → 202 + run_id' },
-  { action: 'Ход выполнения и события', module: 'журналы вызовов, привязки через хеши', endpoint: 'GET /api/runs/{id}' },
-  { action: 'Отмена', module: '— операция не подтверждена', endpoint: 'POST /api/runs/{id}/cancel (требует реализации)' },
-  { action: 'Diff попытки Blue', module: 'артефакты candidate', endpoint: 'GET /api/runs/{id}/attempts/{n}/diff' },
-  { action: 'Артефакты и отчёты', module: 'storage.py', endpoint: 'GET /api/runs/{id}/artifacts/{aid} — traversal запрещён' },
-  { action: 'Экспорт патча', module: 'Git — отдельный коммит', endpoint: 'GET /api/runs/{id}/patch — без merge/push' },
-  { action: 'Диагностика', module: 'docker/metrics', endpoint: 'GET /api/diagnostics — нет данных → {available:false}' },
-  { action: 'CSRF для изменяющих операций', module: '—', endpoint: 'GET /api/csrf + заголовок X-CSRF-Token; сервер слушает loopback' },
+  { action: 'Список проектов и снимков', module: 'dashboard.py / projects.py / snapshots.py', endpoint: 'GET /api/projects', status: 'Работает', detail: 'Снимки входят в ответ; отдельного GET snapshots нет.' },
+  { action: 'Регистрация проекта', module: 'projects.py', endpoint: 'POST /api/projects', status: 'Работает', detail: 'Регистрация локального пути без исполнения кода.' },
+  { action: 'Создание снимка', module: 'snapshots.py', endpoint: 'POST /api/projects/{id}/snapshots', status: 'Работает', detail: 'Копирование допустимых файлов с фиксацией хешей.' },
+  { action: 'Политики', module: 'dashboard.py', endpoint: 'GET /api/policies', status: 'Работает', detail: 'Чтение внешних политик оператора.' },
+  { action: 'AI-профили и выбор модели', module: 'dashboard_profiles.py / ai_config.py', endpoint: 'GET /api/ai-configs', status: 'Работает', detail: 'Выбранный профиль передаётся при создании запуска.' },
+  { action: 'Валидация конфигурации', module: 'ai_config.py', endpoint: 'POST /api/ai-configs/{id}/validate', status: 'Работает', detail: 'Проверка параметров, без обращения к модели.' },
+  { action: 'Наличие модели', module: 'dashboard.py / hermes_adapter.py', endpoint: 'POST /api/ai-configs/{id}/ping-model', status: 'Работает', detail: 'Проверяются имя и digest через /api/tags; генерация не проверяется.' },
+  { action: 'Предпроверка', module: 'dashboard.py / http_runner.py', endpoint: 'POST /api/preflight', status: 'Работает', detail: 'Снимок, пакет, политика, Docker, образы, сеть и модель.' },
+  { action: 'Создание запуска', module: 'dashboard.py / access_ai.py', endpoint: 'POST /api/runs → 202 + runId', status: 'Работает', detail: 'Один access-ai запуск; ограниченный FastAPI-профиль S7.2.' },
+  { action: 'История запусков', module: 'dashboard.py / dashboard_dto.py', endpoint: 'GET /api/runs', status: 'Частично', detail: 'Подключена история access_ai; старые demo/candidate-check доступны через CLI.' },
+  { action: 'Ход выполнения и события', module: 'dashboard.py / dashboard_dto.py', endpoint: 'GET /api/runs/{id}', status: 'Работает', detail: 'Опрос статуса и ключевых этапов; последние 200 событий, ожидание модели без фиктивного процента.' },
+  { action: 'Отмена', module: 'dashboard.py', endpoint: 'POST /api/runs/{id}/cancel', status: 'Работает', detail: 'Только активный запуск текущего сервера. Сначала CANCEL_REQUESTED, затем STOPPED после проверки очистки; ошибка очистки → BLOCKED.' },
+  { action: 'Diff каждой попытки Blue', module: '—', endpoint: 'GET /api/runs/{id}/attempts/{n}/diff', status: 'Работает', detail: 'Для кандидатов, созданных с S8.2: отдельный diff относительно исходного снимка, включая отклонённые предложения.' },
+  { action: 'Артефакты', module: 'dashboard.py', endpoint: 'GET /api/runs/{id}/artifacts/{aid}', status: 'Работает', detail: 'Сохранённые файлы выбранного запуска, только текстовый просмотр.' },
+  { action: 'Экспорт подтверждённого патча', module: 'dashboard.py / access_ai.py', endpoint: 'GET /api/runs/{id}/patch', status: 'Работает', detail: 'Только PASS с сохранённым Git diff; merge/push не выполняются.' },
+  { action: 'Метрики CPU/RAM/GPU', module: 'dashboard.py', endpoint: 'GET /api/diagnostics', status: 'Заглушка', detail: 'Возвращает available:false; метрики не собираются.' },
+  { action: 'Подключение и CSRF', module: 'dashboard.py', endpoint: 'GET /api/health; GET /api/csrf', status: 'Работает', detail: 'Loopback, проверка Host/Origin, CSRF-токен для POST.' },
 ] as const

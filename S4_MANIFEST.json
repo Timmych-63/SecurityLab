@@ -1,0 +1,34 @@
+{
+  "stage": "S4",
+  "commit": "89760271595eb2bad4090c23c17a92cc7d5215b9",
+  "base_commit": "782916138b34f1e7893b7495ec7e067d3e5d16cb",
+  "tests": {
+    "automated_pass": 109,
+    "real_hermes_fake_model": "PASS",
+    "live_model": "NOT_TESTED",
+    "live_docker_build": "NOT_TESTED"
+  },
+  "files": {
+    "README.md": "66bf6aa05a3fc2200ba0cb0c804af284be8f82b90a1eef1109da07db0c39ab80",
+    "compose.ai.yaml": "bb02d73643647eefda78d353030256fd455a715c12fcf1b3e38d11a61521a2ce",
+    "docker/Hermes.Dockerfile": "ed8471493fea24ab53fd1261e07552e3dc82375fb4f015c6c0e845843a62fb43",
+    "docs/ACCEPTANCE.md": "083aaaff032961b44f3b5f04c925b31c319c30e0ac60aa19a9710f1e3e04539c",
+    "docs/ARCHITECTURE.md": "a9197044ba10743e7b4d67331d0e0f028d4c5051f193353de5f3bceb5558e7a5",
+    "docs/CHANGELOG.md": "9e902940c86a88c6342ecff9946517a0fac18379c4515a3fd0fa73463ccfaf78",
+    "docs/S4_HERMES.md": "035e50b63766c2553182b7fdcecdeb3c2bbf290c4b644c53c57deb904daa79ba",
+    "docs/STATE.md": "77e162da65726e0f176da0d08bad25fd1273f406a738dd3b193a8e83bea7c2b8",
+    "docs/TEST_RESULTS.md": "8164c0de203407aede6821770e409b13e23a5d31903df3485572fa239091d893",
+    "docs/hermes-api-probe-output.txt": "4048af38165bedff6cdf2f461a0668a486c279fed95b6d5aad42e98b6f240da7",
+    "docs/test-s4-output.txt": "06781247dfba3728d08ab0e16948bab4f3a75559954644f5e1e7413adae42d64",
+    "scripts/Start-S4.ps1": "893ed951de9a6f560811af8ec31d4709896f269b6556df863e21e95ed919918b",
+    "scripts/probe_hermes_api.py": "eec1d1745087ff74f403ba2739c172a10bed1f93872ef2f3c6fe3ed7232cb033",
+    "securitylab/ai_contract.py": "7fec537bf0daa52cf8513d4a1bf54d4462865feabc33398f618e2fe6bd9cefc9",
+    "securitylab/ai_workflow.py": "478c90c07cfe340f9000c891cd9c7bdd9042ce7d0a183f9402c38601b2cba827",
+    "securitylab/cli.py": "602499d7acb54f54a2d42066685d930611f61866193470d77066a5739894ffb4",
+    "securitylab/hermes_adapter.py": "611a4eb9bb981934aa47e51ed7ab0ab5bcaa20fc5a74a31f4ff90e20d4795ce7",
+    "securitylab/hermes_worker.py": "d7e4711829fddb0e274c8a543cbee6b71ad0d54e54629c01bb7644c4a3e8c4cf",
+    "tests/test_ai.py": "b676fa29c9d864eb6bc949ed6a5995548b3bcc586fe49d8f0018451925622228",
+    "SecurityLab_S4.git.bundle": "80f4f3b28ffd4cbebe3d50f558d5a30491d529db4b67adc6775c8f30cfb5ced9",
+    "README_S4_UPDATE.txt": "53a9059df2b59cc857d52eb6c684c9ae0a4e4a6942647e102b735e0bad56f4de"
+  }
+}

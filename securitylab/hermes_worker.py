@@ -9,6 +9,43 @@ from .ai_contract import HERMES_REVISION, MODEL, MODEL_DIGEST, strict_json, dige
 from .proposal_modes import proposal_prompt, proposal_validate, proposal_feedback, proposal_system
 from .policy import PolicyError
 from .ai_config import AIConfig, from_dict
+from .research_contract import (TASK_BLUE, TASK_RED, blue_corrective_instruction,
+                                corrective_instruction)
+
+
+def corrective_feedback(reason):
+    """Compact model-facing instruction for one corrective attempt."""
+    return ('Your previous response was rejected: ' + reason +
+            '. Reply again with exactly one compact valid JSON object exactly as '
+            'prescribed by the schema; do not repeat the rejected text and add no prose.')
+
+
+def transport_rejection(detail):
+    """Classify a Hermes-level conversation failure as a recoverable rejection.
+
+    Truncated output (finish_reason='length'), degenerate repetition and empty
+    responses are weak-model failures, not contract violations: they are reported
+    as a REJECTED attempt with corrective feedback instead of ending the run.
+    """
+    lowered = detail.lower()
+    if ('truncat' in lowered or "finish_reason" in lowered
+            or 'max output' in lowered or "'length'" in lowered):
+        reason = 'response truncated: model hit the output token limit'
+    elif 'repeat' in lowered or 'degenerat' in lowered or 'loop' in lowered:
+        reason = 'response degenerated into repeated text'
+    else:
+        reason = 'model returned no usable answer'
+    return reason, corrective_feedback(reason)
+
+
+def sampling_overrides(config):
+    """Deterministic JSON mode plus optional repetition suppression knobs."""
+    overrides = {'temperature': 0, 'response_format': {'type': 'json_object'}}
+    if config.frequency_penalty is not None:
+        overrides['frequency_penalty'] = float(config.frequency_penalty)
+    if config.presence_penalty is not None:
+        overrides['presence_penalty'] = float(config.presence_penalty)
+    return overrides
 
 
 def invoke(req, agent_class, capture=None, config=None):
@@ -22,15 +59,27 @@ def invoke(req, agent_class, capture=None, config=None):
                         save_trajectories=False, max_iterations=2, max_tokens=config.max_output_tokens,
                         run_budget_seconds=config.timeout_seconds - 60, fallback_model=None,
                         reasoning_config={'enabled': False},
-                        request_overrides={'temperature': 0, 'response_format': {'type': 'json_object'}})
+                        request_overrides=sampling_overrides(config))
     if agent.tools:
         raise PolicyError('Hermes unexpectedly enabled tools')
     def deny(*args, **kwargs):
         raise PolicyError('Tool execution forbidden in proposal mode')
     agent._execute_tool_calls = deny
     result = agent.run_conversation(user_message=query, system_message=proposal_system(req))
-    if not isinstance(result, dict) or result.get('error'):
-        raise PolicyError('Hermes conversation failed')
+    detail = None
+    if not isinstance(result, dict):
+        detail = 'Hermes returned no conversation result'
+    elif result.get('error'):
+        detail = str(result['error'])
+    elif (not isinstance(result.get('final_response'), str)
+          or not result['final_response'].strip()):
+        detail = 'Hermes returned an empty response'
+    if detail is not None:
+        reason, feedback = transport_rejection(detail)
+        print('AI_RESPONSE_JSON=' + json.dumps(feedback, ensure_ascii=True), file=sys.stderr)
+        print('AI_ATTEMPT_JSON=' + json.dumps({'role': req['role'], 'attempt': attempt,
+              'status': 'REJECTED', 'reason': detail[:300], 'feedback': [feedback]}), file=sys.stderr)
+        raise PolicyError('Hermes conversation failed: ' + reason + '; ' + detail[:300])
     for message in result.get('messages', []):
         if message.get('role') == 'tool' or message.get('tool_calls'):
             raise PolicyError('Unexpected tool invocation')
@@ -46,6 +95,27 @@ def invoke(req, agent_class, capture=None, config=None):
         else:
             proposal_validate(req, value)
     except PolicyError as exc:
+        if req.get('task') in (TASK_RED, TASK_BLUE):
+            # Research retries bound corrective feedback at 4000 bytes; the raw
+            # response can be far larger and would stop the run with 'Invalid
+            # research corrective feedback'. The composed note carries the reason
+            # plus the canonical response shapes (live run #5: a weak model kept
+            # misforming http checks across the corrective attempt without a
+            # worked example). Discovery/review/S7.2 bounds are 16000 bytes and
+            # deliberately reuse the raw response instead.
+            note = (corrective_instruction(exc, req=req, value=value)
+                    if req.get('task') == TASK_RED
+                    else blue_corrective_instruction(exc))
+            print('AI_RESPONSE_JSON=' + json.dumps(note, ensure_ascii=True), file=sys.stderr)
+        # Surface the rejected proposal so the core can auto-probe its own
+        # unobserved hypothesis pairs (live run #5: 'Hypothesis must reference
+        # an HTTP observation' killed the run even though one probe had run).
+        try:
+            dumped = json.dumps(value, ensure_ascii=True)
+        except (TypeError, ValueError):
+            dumped = None
+        if dumped is not None and len(dumped) <= 16000:
+            print('AI_PROPOSAL_JSON=' + dumped, file=sys.stderr)
         print('AI_ATTEMPT_JSON=' + json.dumps({'role': req['role'], 'attempt': attempt,
               'status': 'REJECTED', 'reason': str(exc),
               'feedback': proposal_feedback(req, value) if req['role'] == 'blue' else [str(exc)]}), file=sys.stderr)

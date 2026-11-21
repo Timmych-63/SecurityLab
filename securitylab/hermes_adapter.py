@@ -6,6 +6,11 @@ import uuid
 import sys
 from .ai_contract import HERMES_REVISION, MODEL, MODEL_DIGEST, digest, strict_json
 from .proposal_modes import proposal_prompt, proposal_validate, proposal_retry
+from .discovery_contract import TASK as DISCOVERY_TASK
+from .review_contract import TASK as REVIEW_TASK
+from .research_contract import TASK_RED as RESEARCH_RED_TASK
+from .research_contract import TASK_BLUE as RESEARCH_BLUE_TASK
+_RETRYABLE_TASKS = (DISCOVERY_TASK, REVIEW_TASK, RESEARCH_RED_TASK, RESEARCH_BLUE_TASK)
 from .container_runner import IMAGE_ID
 from .policy import Limits, PolicyError
 from .process import execute
@@ -50,26 +55,31 @@ def validate_envelope(req, value, config=None):
 
 
 class ProposalRejected(PolicyError):
-    def __init__(self, message, previous):
+    def __init__(self, message, previous, proposal=None, receipt_id=None):
         super().__init__(message)
         self.previous = previous
+        self.proposal = proposal
+        self.receipt_id = receipt_id
         self.cleanup_passed = False
 
 
 def rejected_reply(stderr, role, attempt):
-    raw = decision = None
+    raw = decision = proposal = None
     for line in stderr.splitlines():
         try:
             if line.startswith('AI_RESPONSE_JSON='):
                 raw = json.loads(line[len('AI_RESPONSE_JSON='):])
             if line.startswith('AI_ATTEMPT_JSON='):
                 decision = json.loads(line[len('AI_ATTEMPT_JSON='):])
+            if line.startswith('AI_PROPOSAL_JSON='):
+                proposal = json.loads(line[len('AI_PROPOSAL_JSON='):])
         except ValueError:
             return None
     if (isinstance(raw, str) and len(raw.encode('utf-8')) <= 16000
         and isinstance(decision, dict) and decision.get('role') == role
         and decision.get('attempt') == attempt and decision.get('status') == 'REJECTED'):
-        return raw
+        reason = decision.get('reason')
+        return raw, (reason if isinstance(reason, str) and reason else ''), proposal
     return None
 
 
@@ -101,9 +111,9 @@ class HermesAdapter:
         try:
             return self._ask_once(req, stop)
         except ProposalRejected as exc:
-            if req['role'] != 'blue' or 'retry' in req or not exc.cleanup_passed or stop():
+            if (req['role'] != 'blue' and req.get('task') not in _RETRYABLE_TASKS) or 'retry' in req or not exc.cleanup_passed or stop():
                 raise
-            print('Blue: proposal rejected; starting final corrective attempt.', file=sys.stderr, flush=True)
+            print(f"{req['role']}: proposal rejected; starting final corrective attempt.", file=sys.stderr, flush=True)
             return self._ask_once(proposal_retry(req, exc.previous), stop)
 
     def _ask_once(self, req, stop):
@@ -156,10 +166,15 @@ class HermesAdapter:
                 raise PolicyError(f"{req['role']} attempt {attempt}: {reason} after {result.duration}s")
             if (result.returncode == 2 and state.get('Running') is False and state.get('ExitCode') == 2
                 and state.get('OOMKilled') is False and not state.get('Error')):
-                previous = rejected_reply(result.stderr, req['role'], attempt)
-                if previous is not None and req['role'] == 'blue':
+                rejected = rejected_reply(result.stderr, req['role'], attempt)
+                if rejected is not None and (req['role'] == 'blue' or req.get('task') in _RETRYABLE_TASKS):
+                    previous, reason, rejected_proposal = rejected
                     record['status'] = 'REJECTED'
-                    raise ProposalRejected(f"Blue attempt {attempt}: proposal rejected; see call receipt {path}", previous)
+                    message = f"{req['role']} attempt {attempt}: proposal rejected; see call receipt {path}"
+                    if reason:
+                        message += ': ' + reason[:300]
+                    raise ProposalRejected(message, previous, proposal=rejected_proposal,
+                                           receipt_id=identity)
             if (not result.passed or state.get('Running') is not False or state.get('OOMKilled') is not False
                 or state.get('Error') or type(state.get('ExitCode')) is not int or state['ExitCode'] != 0):
                 raise PolicyError('Hermes failed/interrupted: ' + result.stderr[-1500:])

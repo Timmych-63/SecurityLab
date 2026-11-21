@@ -90,6 +90,25 @@ def main(argv=None):
     access_ai.add_argument('--entry', required=True)
     access_ai.add_argument('--policy', type=Path, required=True)
     access_ai.add_argument('--execute', action='store_true')
+    access_ai.add_argument('--discover', action='store_true', help='Red selects GET cases; --policy supplies operator application context')
+    access_ai.add_argument('--multi-file', action='store_true', help='Review and patch up to 8 Python modules')
+    prepare = repo_sub.add_parser('prepare-research', help='Prepare research inputs without execution')
+    prepare.add_argument('snapshot_id')
+    prepare.add_argument('--entry', required=True)
+    prepare.add_argument('--service', default='.')
+    prepare.add_argument('--knowledge', type=Path, required=True)
+    prepare.add_argument('--setup', type=Path, required=True)
+    research = repo_sub.add_parser('research', help='S11 self-directed research cycle from a prepared snapshot')
+    research.add_argument('preparation_id')
+    research.add_argument('--execute', action='store_true', help='Explicitly permit Docker execution of the prepared stand')
+    research_check = repo_sub.add_parser('research-check', help='Static research readiness: preparation and project compatibility')
+    research_check.add_argument('preparation_id')
+    review = repo_sub.add_parser('review', help='Defensive source review and operator functional regressions')
+    review.add_argument('snapshot_id')
+    review.add_argument('--service', default='.')
+    review.add_argument('--entry', required=True)
+    review.add_argument('--policy', type=Path, required=True)
+    review.add_argument('--execute', action='store_true')
     args = parser.parse_args(argv)
     if args.command == 'doctor':
         print(json.dumps({'python': sys.version.split()[0], 'core': 'PASS',
@@ -167,10 +186,23 @@ def main(argv=None):
                 from .access_baseline import access_baseline_snapshot
                 result = access_baseline_snapshot(store, args.snapshot_id, args.entry, args.policy,
                                                   service=args.service, execute=args.execute, limits=limits)
+            elif args.repo_command == 'prepare-research':
+                from .research_prepare import prepare_research
+                result = prepare_research(store, args.snapshot_id, args.entry, args.knowledge, args.setup, args.service)
+            elif args.repo_command == 'research':
+                from .research_cycle import run_research_cycle
+                result = run_research_cycle(store, args.preparation_id, execute=args.execute,
+                                            limits=limits)
+            elif args.repo_command == 'research-check':
+                from .research_cycle import research_readiness
+                result = research_readiness(store, args.preparation_id)
+            elif args.repo_command == 'review':
+                from .defensive_review import run_defensive_review
+                result = run_defensive_review(store,args.snapshot_id,args.entry,args.policy,service=args.service,execute=args.execute,limits=limits)
             elif args.repo_command == 'access-ai':
                 from .access_ai import run_access_ai
                 result = run_access_ai(store, args.snapshot_id, args.entry, args.policy,
-                                       service=args.service, execute=args.execute, limits=limits)
+                                       service=args.service, execute=args.execute, limits=limits, multi_file=args.multi_file, discover=args.discover)
             elif args.repo_command in {'snapshot', 'snapshots', 'verify-snapshot', 'plan'}:
                 from .snapshots import create_snapshot, list_snapshots, verify_snapshot
                 if args.repo_command == 'snapshot':
@@ -217,6 +249,10 @@ def main(argv=None):
             store.get(args.run)
             result = {'report': str(report(store, args.run, output))}
         print(json.dumps(result, ensure_ascii=False, indent=2))
+        if args.command == 'repo' and args.repo_command == 'research':
+            return 0 if result.get('status') in {'PASS', 'DONE'} else 2
+        if args.command == 'repo' and args.repo_command == 'research-check':
+            return 0 if result.get('ready') is True else 2
         if args.command == 'repo' and args.repo_command == 'access-ai':
             return 0 if result['status'] == 'PASS' else 2
         if args.command == 'repo' and args.repo_command == 'access-baseline':

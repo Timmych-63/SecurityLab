@@ -19,9 +19,12 @@ export function fmtDuration(fromIso: string, toIso?: string): string {
 }
 
 export function fmtSec(total: number): string {
-  if (total < 60) return `${total} с`
-  const m = Math.floor(total / 60)
-  const s = total % 60
+  if (!Number.isFinite(total) || total < 0) return '—'
+  // Round once in integer milliseconds before splitting: no floating point tails.
+  const ms = Math.round(total * 1000)
+  if (ms < 60000) return `${ms / 1000} с`
+  const m = Math.floor(ms / 60000)
+  const s = (ms % 60000) / 1000
   if (m < 60) return s ? `${m} мин ${s} с` : `${m} мин`
   const h = Math.floor(m / 60)
   return `${h} ч ${m % 60} мин`

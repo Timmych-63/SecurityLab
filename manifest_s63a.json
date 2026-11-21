@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "release": "S6.3a",
+  "kind": "overlay_over_S6.2.2",
+  "git_head": "ded4d2c",
+  "files_sha256": {
+    "securitylab/cli.py": "753ea08b9857fb9e776176f0f7b509761b18f89a725be88c631e2ce3227bf9b5",
+    "securitylab/profile_plan.py": "d3cd7cfd4c3111c7069b8204edd06fe9fcc3b21a050db059aca8cd79168f6d5e",
+    "securitylab/probe_runner.py": "d5917931216217fad66abcf7630509c803d1b8d1a3cd72393191bef6742f254b",
+    "tests/test_probe.py": "9fca886ff253092a3c3ebee2f9b19649e8cc4d1010bdf13cbce29eebc9d246a3",
+    "examples/s6_repos/python_standalone/main.py": "f8b45625d5588bbac77529e5e0dfc40a3cd4d4b77147e912b963391fc0225c3b",
+    "examples/s6_repos/python_standalone/pyproject.toml": "b3744b9a7691a760cc5708da3dee0fea43d0ef4227c53fb9d6d506182be1b280",
+    "README_S6_3a_RU.md": "0ab5a8070eb744ef1345ca4eaee2550cb0ef136f46d25d62afa39b2743428cfc",
+    "docs/S6_3a.md": "ad6e208df11d4655145088b68901ec81db9854dbeb81d76be6c4b3dca6955e69",
+    "docs/STATE.md": "9a8d4231e1fa6dabb489f569bffc39f58ceec89b993458b8b8d62622f3113d0b",
+    "docs/CHANGELOG.md": "f33b98e9963e6df06c3efd206bea6bc212bb5e93cdbaccda1458a0930e5f1981"
+  },
+  "history_bundle": "SecurityLab_S6_3a.bundle",
+  "notes": "No .securitylab, state DB, model volume, or secrets included; probe is opt-in and not a security verdict"
+}

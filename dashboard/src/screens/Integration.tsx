@@ -104,7 +104,7 @@ export function Integration() {
           </p>
           <div className="mt-4"><Note tone="warn" title="Границы текущей интеграции">
             Поддержан access-ai для одного FastAPI-модуля и внешней политики. История показывает access_ai.
-            Старые demo/candidate-check доступны через CLI. Очередь, безопасная отмена access-ai и метрики CPU/GPU пока не подключены.
+            Старые demo/candidate-check доступны через CLI. Очередь и метрики CPU/GPU пока не подключены. Отмена доступна активному запуску текущего сервера; её завершение подтверждается после очистки.
             npx serve dist и Node-сервер симуляции не запускают Python-ядро.
           </Note></div>
         </Card>
@@ -114,7 +114,7 @@ export function Integration() {
           <div className="p-5 sm:p-6">
             <Overline>03 · Карта «действие UI → модуль → endpoint»</Overline>
             <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-ink2">
-              API реализован в securitylab/dashboard.py и вызывает модули ядра. Отмена access-ai возвращает явный отказ до реализации безопасной остановки.
+              API реализован в securitylab/dashboard.py и вызывает модули ядра. Отмена сначала возвращает CANCEL_REQUESTED; финальный результат виден после остановки и проверки очистки.
             </p>
           </div>
           <div className="overflow-x-auto border-t border-line">
@@ -122,8 +122,8 @@ export function Integration() {
               <thead>
                 <tr>
                   <th>Действие в UI</th>
-                  <th>Ожидаемый модуль</th>
-                  <th>Предлагаемый endpoint</th>
+                  <th>Модуль</th>
+                  <th>Endpoint</th><th>Готовность в Python-ядре</th>
                 </tr>
               </thead>
               <tbody>
@@ -132,6 +132,7 @@ export function Integration() {
                     <td className="text-ink2">{e.action}</td>
                     <td className="font-mono text-[12px] text-ink3">{e.module}</td>
                     <td className="font-mono text-[12px] font-semibold">{e.endpoint}</td>
+                    <td className="min-w-[230px]"><Chip tone={e.status === "Работает" ? "mint" : "warn"}>{e.status}</Chip><p className="mt-2 text-[12px] text-ink3">{e.detail}</p></td>
                   </tr>
                 ))}
               </tbody>

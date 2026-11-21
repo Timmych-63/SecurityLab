@@ -1,0 +1,65 @@
+{
+  "version": "S6.3b",
+  "base": "S6.3a",
+  "head": "deafff0",
+  "type": "overlay plus full git bundle",
+  "files": {
+    "README_S6_3b_RU.md": {
+      "sha256": "171809c7556c2831e4d988642c7bb65ce84fec89f1f29eda17bb586eb41462ab",
+      "bytes": 4261
+    },
+    "SecurityLab_S6_3b.bundle": {
+      "sha256": "42d5c5d52a32124ddac1199104792bddedac1120fca34765191e23adcc1702e0",
+      "bytes": 224698
+    },
+    "docs/CHANGELOG.md": {
+      "sha256": "509c8d2021f6b36696b2484a2275cc43aa30969f41abeff77d9f4feb0b426d8d",
+      "bytes": 8562
+    },
+    "docs/STATE.md": {
+      "sha256": "aa5a5fe2dd6fbb81ad33a4997d9803637e17887a51e5cf8737db72a8d1320dfd",
+      "bytes": 8652
+    },
+    "docs/S6_3b.md": {
+      "sha256": "b5b6b5995fec21099c5ca408b4565b101217a15395ea694f78adc80893e1c203",
+      "bytes": 7163
+    },
+    "securitylab/cli.py": {
+      "sha256": "dd79bc8fd46ece2a06e41b7356600235e50f4f1c7ed64df4cb40eb564d81af58",
+      "bytes": 10527
+    },
+    "securitylab/profile_plan.py": {
+      "sha256": "7a83cf6549c337f334c082e8aaefca79de52757337926ac79803db23871c02a8",
+      "bytes": 2554
+    },
+    "securitylab/http_runner.py": {
+      "sha256": "5615d842639ae80d7ccc3fc9dcafc731ee293a8dbbafbb422e827b67c7a3d74f",
+      "bytes": 15327
+    },
+    "securitylab/http_probe.py": {
+      "sha256": "6c13a25806448648c76fe7c4d15f1b845f5e4c1e201dad1781048813345e6518",
+      "bytes": 5934
+    },
+    "tests/test_http_probe.py": {
+      "sha256": "0d28b848e5a190ea31f47caa5015813dc9e9cfcb3d7e844ddb279a01ba4f5a59",
+      "bytes": 15706
+    },
+    "examples/s6_repos/python_http_alpha/main.py": {
+      "sha256": "3994277745084ae8177520c22671c36bab02b42ef259b74c57c2d6c00dfa412e",
+      "bytes": 752
+    },
+    "examples/s6_repos/python_http_alpha/pyproject.toml": {
+      "sha256": "76bc70746e3cff3316b0e2ecb0be8325a595427d9967d50cab28eea922a086fa",
+      "bytes": 83
+    },
+    "examples/s6_repos/python_http_beta/app.py": {
+      "sha256": "3a7408fde749166231a09d33668c767fa0e3a46a96929c7898e9858ec57f8d44",
+      "bytes": 526
+    },
+    "examples/s6_repos/python_http_beta/pyproject.toml": {
+      "sha256": "11b2ce2720f447eff259d23ba8b4e14ac873d600d735ce3b98aef4361821524f",
+      "bytes": 82
+    }
+  },
+  "verification": "96 selected local tests, live Windows/Docker HTTP test pending"
+}

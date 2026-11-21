@@ -1,0 +1,15 @@
+{
+  "commit": "fa4c83334b6f3c22e2ace940e5b865fe41f7d9eb",
+  "files": {
+    "README.md": "cc5a5d6ef5194c03ddba305ad7c9423f426e85d51095245749a9bf14924ddd6a",
+    "docs/ACCEPTANCE.md": "aacc7434a98e80fa4c95581cda6eab2c1ff98daa1d25f51b7b3cee5073140c62",
+    "docs/ARCHITECTURE.md": "27c57f56d3d250673a171b5dd2d16ea994f0c4d24d666db4ada2a5c7a6f8cdc3",
+    "docs/CHANGELOG.md": "25bf4211341fbed20bb32d616aee6fb886c22392a61f9519b23e1636835b9353",
+    "docs/DECISIONS.md": "0dd8ac9d064f16b8037faf8b1b76e91b62436b7e1a1624928443dc1193d5aa46",
+    "docs/STATE.md": "bc0055f64c777bfe6de9b9aebe17565c61ae65c68cadde3046ad7658d6fdf1f0",
+    "docs/TEST_RESULTS.md": "53fb550e1bfc1731b761146de58e566de5158537a97326549306d55c71a7a931",
+    "docs/test-isolation-output.txt": "3406cfae0ca5a0dcc9c5b1187d0e961e9c7e31b30769bab9cac37fb1aa09d7c7",
+    "securitylab/sandbox_check.py": "689b130cb0d494a912279c86336feeccced7118d1748c6828e42860830acf5d5",
+    "tests/test_sandbox_check.py": "b78cbdf00e2713f980dd79c92f73a2debab6c60d5fc8cf031b63ee6096cf91ac"
+  }
+}

@@ -71,6 +71,7 @@ export interface Project {
 
 /** Политика оператора — только чтение. Редактирование вне UI. */
 export interface Policy {
+  kind?: 'fixed' | 'discovery' | 'defensive'
   id: string
   name: string
   version: string
@@ -105,6 +106,32 @@ export interface PreflightResult {
   imagesDetail?: string
   modelDetail?: string
   checkedAt?: string
+  /** Расширенная предпроверка исследования: подготовка/совместимость/запуск приложения. */
+  prepare?: PreflightState
+  project?: PreflightState
+  app?: PreflightState
+  details?: Record<string, string>
+  params?: unknown
+}
+
+/** Входные данные подготовки исследования (этап 1). */
+export interface ResearchPreparationInput {
+  snapshotId: string
+  service: string
+  entryModule: string
+  knowledgeText: string
+  actors: Record<string, string>
+  budget: { seconds: number; decisions: number; requests: number }
+}
+
+export interface ResearchPreparationResult {
+  preparationId: string
+  status: 'PREPARED' | 'SUPERSEDED'
+  budget: { seconds: number; decisions: number; requests: number }
+  actors: Record<string, string>
+  manifestSha256: string
+  knowledgeSha256: string
+  setupSha256: string
 }
 
 /** Одно событие журнала. text — недоверенная строка: рендер только текстом. */
@@ -201,6 +228,8 @@ export interface RunTech {
 
 export interface Run {
   id: string
+  cancelSupported?: boolean
+  cancelRequested?: boolean
   demo: boolean // прогон сервера симуляции/демо помечается всегда
   projectId: string
   snapshotId: string
@@ -209,7 +238,9 @@ export interface Run {
   profileId: string
   policyId: string
   aiConfigId: string
-  mode: string // ai_red_blue / smoke_only
+  /** Идентификатор подготовки исследования (только для режима research-v1). */
+  preparationId?: string | null
+  mode: string // ai_red_blue / smoke_only / S11_RESEARCH_CYCLE
   /** state-каталог ядра, с которым выполнялся прогон. */
   stateDir?: string
   timingKnown?: boolean // false for imported summaries without execution timestamps
@@ -234,6 +265,12 @@ export interface Run {
   commit?: { ref: string; sha: string; isolated: boolean }
   artifacts: Artifact[]
   tech: RunTech
+  /** Режим исследования: гипотезы Red с независимыми статусами подтверждения. */
+  hypotheses?: ResearchHypothesisView[]
+  /** Режим исследования: использованный и оставшийся бюджет (без процентов). */
+  coverage?: { decisions_used: number; requests_used: number; verification_requests: number; seconds_used: number; budget: { seconds: number; decisions: number; requests: number } }
+  /** Режим исследования: пояснения цикла (ограничения, остановки по бюджету). */
+  notes?: string[]
   /** Для активного демо-прогона: сценарий симуляции по секундам. */
   script?: DemoScript
 }
@@ -253,6 +290,25 @@ export interface RunFilters {
   dateRange?: 'all' | '24h' | '7d'
 }
 
+/** Гипотеза Red и её независимая проверка; статусы считаются ядром, не моделью. */
+export interface ResearchHypothesisView {
+  n: number
+  file: string
+  path: string
+  actor: string
+  description: string
+  basis: string
+  expectedStatus: number
+  observedStatus: number | null
+  /** Стадия, где ядро зафиксировало наблюдение Red (http_01, http_assist_02…). */
+  observedStage?: string | null
+  confirmStatus: number | null
+  /** Стадия свежего стенда воспроизведения; null — свежий стенд не запускался. */
+  confirmStage?: string | null
+  state: 'confirmed' | 'refuted' | 'consistent' | 'unconfirmed' | 'insufficient'
+  patch?: string
+}
+
 export interface NewRunInput {
   projectId: string
   snapshotId: string
@@ -260,7 +316,10 @@ export interface NewRunInput {
   /** Путь файла точки входа (app/main.py); import string выводит backend. */
   entryModule: string
   profileId: string
-  policyId: string
+  /** Обязателен для штатных режимов; в режиме исследования не передаётся. */
+  policyId?: string
+  /** Обязателен для режима исследования (results of POST /api/research/prepare). */
+  preparationId?: string
   aiConfigId: string
   /** state-каталог ядра. */
   stateDir: string
@@ -293,6 +352,8 @@ export interface SecurityLabAdapter {
   pingModel(id: string): Promise<{ ok: boolean; detail: string }>
 
   preflight(input: NewRunInput): Promise<PreflightResult>
+  /** Подготовка входа исследования: документация + аккаунты + бюджет. Только ядро. */
+  prepareResearch(input: ResearchPreparationInput): Promise<ResearchPreparationResult | BackendRefusal>
 
   listRuns(filters?: RunFilters): Promise<Run[]>
   /** null — только «не найдено» (404); сетевая ошибка выбрасывается, чтобы не маскироваться под отсутствие данных. */

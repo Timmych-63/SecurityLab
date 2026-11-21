@@ -1,6 +1,8 @@
 import { useId, useLayoutEffect, useRef, useState } from 'react'
 import type { Run, Stage } from '../adapter/types'
 import { fmtSec } from '../lib/format'
+import { translateStageText } from '../lib/ru'
+import { stagePresentation } from '../lib/stagePresentation'
 
 /**
  * Графики в стилистике lucian-uxui-prompt (элементы #095 bar-chart-hover,
@@ -276,7 +278,9 @@ export function DurationLine({ runs }: { runs: Run[] }) {
 /* ===================== длительности этапов (горизонтальные бары) ===================== */
 
 const STAGE_COLOR: Record<string, string> = {
-  done: 'var(--mint)',
+  neutral: 'var(--ink3)',
+  violation: 'var(--warn)',
+  matched: 'var(--mint)',
   running: 'var(--accent)',
   wait_model: 'var(--warn)',
   failed: 'var(--danger)',
@@ -284,7 +288,9 @@ const STAGE_COLOR: Record<string, string> = {
   skipped: 'var(--raise)',
 }
 const STAGE_LABEL: Record<string, string> = {
-  done: 'завершён',
+  neutral: 'этап завершён / пропущен; не вердикт безопасности',
+  violation: 'нарушение воспроизведено',
+  matched: 'проверенные случаи соответствуют политике',
   running: 'выполняется',
   wait_model: 'ожидаем ответ',
   failed: 'ошибка',
@@ -311,14 +317,14 @@ export function StageBars({ stages, elapsedSec }: { stages: Stage[]; elapsedSec:
       <div className="space-y-3.5" role="img" aria-label="длительность этапов прогона, пропорциональные полосы">
         {timed.map((t) => (
           <div key={t.id} className="flex items-center gap-3">
-            <div className="w-[170px] shrink-0 truncate text-[12.5px] font-semibold" title={t.label}>
-              {t.label}
-              {t.role && <span className="ml-1.5 text-[10.5px] font-bold text-ink3">{t.role}</span>}
+            <div className="w-[170px] shrink-0 truncate text-[12.5px] font-semibold" title={translateStageText(t.label)}>
+              {translateStageText(t.label)}
+              {t.role && <span className="ml-1.5 text-[10.5px] font-bold text-ink3">{translateStageText(t.role)}</span>}
             </div>
             <div className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-raise">
               <div
                 className="chartbar h-full rounded-full"
-                style={{ width: `${Math.max(2, (t.dur / maxDur) * 100)}%`, background: STAGE_COLOR[t.state] ?? 'var(--raise)', animationDelay: '40ms' }}
+                style={{ width: `${Math.max(2, (t.dur / maxDur) * 100)}%`, background: STAGE_COLOR[stagePresentation(t).tone] ?? 'var(--raise)', animationDelay: '40ms' }}
               />
             </div>
             <div className={`w-[110px] shrink-0 text-right font-mono text-[11.5px] font-semibold ${t.state === 'failed' ? 'text-dangerink' : t.state === 'wait_model' ? 'text-warnink' : 'text-ink3'}`}>
@@ -329,7 +335,7 @@ export function StageBars({ stages, elapsedSec }: { stages: Stage[]; elapsedSec:
         ))}
       </div>
       <Legend
-        items={[...new Set(timed.map((t) => t.state))].map((k) => ({ color: STAGE_COLOR[k], label: STAGE_LABEL[k] ?? k }))}
+        items={[...new Set(timed.map((t) => stagePresentation(t).tone))].map((k) => ({ color: STAGE_COLOR[k], label: STAGE_LABEL[k] ?? k }))}
       />
     </div>
   )

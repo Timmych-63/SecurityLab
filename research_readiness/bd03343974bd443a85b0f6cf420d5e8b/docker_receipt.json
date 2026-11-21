@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "status": "HTTP_CHECKS_PASSED",
+  "cleanup": "PASS",
+  "binding": {
+    "run_id": "readiness-69fa2a8d61e3",
+    "stage": "app_start",
+    "snapshot_id": "97e86117050d43f987969dec4e36d570",
+    "profile": "research-readiness-v1"
+  },
+  "source_payload_sha256": "4457d053554ebbdb2a1def150b68aeb66a898d893565bd447f472cabdd0e9d02",
+  "checks_sha256": "79f9d5f00286009c5447d8e29b3bc2377437d8a61e07f9dd0ef372c30087b897",
+  "image_id": "sha256:b62b2ceb4e5e2ab7e588773573b83a0f7d651b14311ed6acf6cc08afa9d98ac5",
+  "target_image_id": "sha256:9badebbc3174bd3f516ee785fe821aa2a5f519c7b9806475a998b77ed533bd09",
+  "network_name": "securitylab-http-675c68d5ae174173857a0649a261d540",
+  "target_name": "securitylab-job-1742784bfff74bdb9255652295956dea",
+  "verifier_name": "securitylab-job-a1651d99a3434e719f09434286c56e44",
+  "observations": [
+    {
+      "actor": null,
+      "actual_status": 200,
+      "body_bytes": 15,
+      "body_sha256": "a29ee2b15c494311c52521766e44af56a3ad2248e7a8ab465e5206463c13d288",
+      "body_truncated": false,
+      "error": null,
+      "expected_status": 200,
+      "passed": true,
+      "path": "/health"
+    }
+  ],
+  "verifier_exit_code": 0,
+  "target_running_at_check": true
+}

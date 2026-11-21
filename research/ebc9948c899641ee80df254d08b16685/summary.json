@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "run_id": "ebc9948c899641ee80df254d08b16685",
+  "mode": "S11_RESEARCH_CYCLE",
+  "profileId": "research-v1",
+  "preparation_id": "1b7f67b7820f4c9ba2c9f55c1de490f0",
+  "status": "BLOCKED",
+  "finding_status": null,
+  "security_verdict": "NOT_EVALUATED",
+  "scope": "Self-directed research of one bounded FastAPI package on the prepared local stand; independent verification; no auto-merge",
+  "output_trust": "AI hypotheses are proposals; violations require independent reproduction",
+  "stages": {
+    "http_01": {
+      "stage": "http_01",
+      "status": "HTTP_CHECKS_PASSED",
+      "observations": [
+        {
+          "actor": "admin",
+          "actual_status": 200,
+          "body_bytes": 15,
+          "body_sha256": "a29ee2b15c494311c52521766e44af56a3ad2248e7a8ab465e5206463c13d288",
+          "body_truncated": false,
+          "error": null,
+          "expected_status": 200,
+          "passed": true,
+          "path": "/health"
+        }
+      ],
+      "image_id": "sha256:b62b2ceb4e5e2ab7e588773573b83a0f7d651b14311ed6acf6cc08afa9d98ac5",
+      "target_image_id": "sha256:9badebbc3174bd3f516ee785fe821aa2a5f519c7b9806475a998b77ed533bd09",
+      "cleanup": "PASS",
+      "receipt_sha256": "baba44370ba58662a6ff35397fbd17b67fe580299dab0d05f5b35ba075344579"
+    }
+  },
+  "ai_calls": [
+    {
+      "role": "red",
+      "id": "08c79577b44947adb4152979b63d671b",
+      "model_digest": "0689d44085e06d165161a8a9a1731344278cfb5aade63a3c3dbdb48ab54b130a"
+    }
+  ],
+  "candidates": [],
+  "hypotheses": [],
+  "notes": [],
+  "record": "C:\\Users\\User\\Downloads\\Разные версии\\SecurityLab_Z\\SecurityLab_v0.1.0_M1_M2\\research\\ebc9948c899641ee80df254d08b16685\\summary.json",
+  "snapshot_id": "97e86117050d43f987969dec4e36d570",
+  "entry": "app/main.py",
+  "service": ".",
+  "module": "app.main",
+  "manifest_sha256": "06267fc925806b0fabeb5fcecdab03c332e404c521678f39424d7f4086618cd4",
+  "ai_config": {
+    "model": "qwen3.5:2b",
+    "model_digest": "0689d44085e06d165161a8a9a1731344278cfb5aade63a3c3dbdb48ab54b130a",
+    "server_url": "http://model:11434",
+    "network": "securitylab-ai-private",
+    "context_tokens": 64000,
+    "max_output_tokens": 2048,
+    "timeout_seconds": 1200,
+    "frequency_penalty": null,
+    "presence_penalty": null
+  },
+  "ai_config_sha256": "2e676704e5e360e40ca34a5521875c8ae0ac2d15d8d743456d430ea32a4c02dc",
+  "error": "Invalid research corrective feedback",
+  "coverage": {
+    "decisions_used": 1,
+    "requests_used": 1,
+    "verification_requests": 0,
+    "seconds_used": 934,
+    "budget": {
+      "seconds": 3600,
+      "decisions": 12,
+      "requests": 60
+    }
+  }
+}

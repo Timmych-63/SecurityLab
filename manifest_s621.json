@@ -1,0 +1,25 @@
+{
+  "release": "SecurityLab S6.2.1 Windows hotfix",
+  "git_commit": "facdc7697c9e830a4437d78a4a3b12227828a4d1",
+  "base_commit": "f579f09",
+  "release_kind": "overlay S6.2 -> S6.2.1",
+  "required_to_copy": [
+    "securitylab/snapshots.py",
+    "tests/test_snapshots.py"
+  ],
+  "tested": {
+    "linux_test_snapshots": 17,
+    "linux_test_repository": 22,
+    "windows_live": "PENDING"
+  },
+  "model_or_docker_changes": false,
+  "sha256": {
+    "README_S6_2_1_RU.md": "1d50893dfac7e19a448aa423dcfe002183916840ae5ed86329e3ebf81584d771",
+    "securitylab/snapshots.py": "16da09cbccab083f42dbdbbaf04affd16752493d9fb1e8d5b755187792289237",
+    "tests/test_snapshots.py": "e00b6f05efb60ed73d1d8f1cd2810118d930734c239b676d489cb9a72d33d94a",
+    "docs/S6_2_1.md": "a4e71921d4ea3dd0a116bdf04c956d2e62d08ac04f4c04daaa4399b6cfcc10ec",
+    "docs/STATE.md": "9061f40f5c6c7c3f4a31309b0cd50101be8b2382a18cb57020165a26ee3f5afa",
+    "docs/CHANGELOG.md": "acb67a87606c33897f0c0adb65cc5badc5b185a48b90611088ed8fa4dbdffd92",
+    "SecurityLab_S6_2_1.bundle": "49f32ef4a5c1c0d7e6aba8f71bea94f76a153bf937b1302a7b7b16137eb3b710"
+  }
+}

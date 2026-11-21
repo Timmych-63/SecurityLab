@@ -1,0 +1,25 @@
+{
+  "commit": "3cbbbdfb96fcf6d10a25829bf23e455042fce4ed",
+  "base_commit": "fa4c833",
+  "tests": {
+    "passed": 70,
+    "failed": 0,
+    "live_docker_s2": "NOT_TESTED"
+  },
+  "files": {
+    "README.md": "408bbd40f0d7738b7dc7e47e106cf3e02744d0adb30e01084e3bc0109f89933a",
+    "compose.yaml": "f708a6dcec77db71fedc84e9f5c6663c8ddaa0b66334a990e3961534e65aa9ec",
+    "docs/ACCEPTANCE.md": "151fb400c990f19a17842f872adbb2de3e635bb8c3bdeca1e92e64a5de1fa570",
+    "docs/ARCHITECTURE.md": "4e32d0ec45f02ee2e57c36e71b7ec76cb305b4390a82d2ffd3add0e373d0152f",
+    "docs/CHANGELOG.md": "cb495fd209cf1f43c8506dd997aaa55a7cb5d7ac819682c882e443835adfc9f6",
+    "docs/S2_RUNNER.md": "61334aa6e1a9fac961dfeced9a27ccc39e646d5dee892071bd61ca6f014a8bf3",
+    "docs/STATE.md": "e8edd593f8465b897f071b210622321b3483ddd9126b1f065e9f9499086a0564",
+    "docs/TEST_RESULTS.md": "900fe5c436a31e8a9d63b54427d3caf0d9167ccbd729f1e517f7398d42324808",
+    "docs/test-s2-output.txt": "d38d1bbf0902707fc90b28f1c4ce7bed7e94d032b9a3caaa5d3442c4e2693374",
+    "securitylab/container_runner.py": "985d2b974c306804010ccda3bf424835fad328d58a171ce009c6b29884f6a672",
+    "securitylab/container_worker.py": "dd50b0449eac0e2824e0396078100bb32685bdc48ff42e92539e78bab1c2e04f",
+    "securitylab/job_contract.py": "aa74e96e9528b14dd381c809e437a299eaf0f4003244982770b412c666e44e18",
+    "securitylab/process.py": "aaee10512b5bf93b6a9f23322d4af7aceb7d3fd26deea7d17ea0d9719adb9766",
+    "tests/test_container_runner.py": "27aa52c613442c055ca603bf8a1535db48f23cfdf6788db026562a36f9fd4f17"
+  }
+}

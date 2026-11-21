@@ -18,6 +18,8 @@ import type {
   Policy,
   PreflightResult,
   Project,
+  ResearchPreparationInput,
+  ResearchPreparationResult,
   Run,
   RunFilters,
   SecurityLabAdapter,
@@ -179,6 +181,10 @@ export class HttpAdapter implements SecurityLabAdapter {
 
   async preflight(input: NewRunInput): Promise<PreflightResult> {
     return this.raw<PreflightResult>('/api/preflight', { method: 'POST', body: input, csrf: true })
+  }
+
+  prepareResearch(input: ResearchPreparationInput) {
+    return this.action<ResearchPreparationResult>('/api/research/prepare', input)
   }
 
   async listRuns(filters?: RunFilters): Promise<Run[]> {

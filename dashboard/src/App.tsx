@@ -233,8 +233,8 @@ function Shell() {
         </Page>
         <footer className="border-t border-line px-5 py-6 sm:px-8 lg:px-12">
           <p className="mx-auto max-w-[1080px] font-mono text-[10.5px] leading-relaxed text-ink3">
-            SecurityLab UI · демо-сборка · интерфейс не исполняет код проектов и не подключается к Docker напрямую;
-            длинные задания выполняет backend-исполнитель
+            SecurityLab · интерфейс управления проверками;
+            длительные задания выполняет сервер
           </p>
         </footer>
       </main>

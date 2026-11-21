@@ -1,0 +1,70 @@
+{
+  "schema_version": 2,
+  "policy_id": "ticketdesk-access",
+  "checks": [
+    {
+      "id": "ticket-owner",
+      "kind": "control",
+      "path": "/tickets/202",
+      "actor": "bob",
+      "expected_status": 200,
+      "expected_body_sha256": "abd52fa83c6d05a80a60b3b49e4b5d40ddda7c57132717be0ce252225229bd4a"
+    },
+    {
+      "id": "ticket-other",
+      "kind": "deny",
+      "path": "/tickets/202",
+      "actor": "alice",
+      "expected_status": 403,
+      "compare_body_to": "ticket-owner"
+    },
+    {
+      "id": "comments-owner",
+      "kind": "control",
+      "path": "/tickets/202/comments",
+      "actor": "bob",
+      "expected_status": 200,
+      "expected_body_sha256": "58e289522477be175311e24c7140c52a66a9d74da970dcd4b37185b00c0c8c02"
+    },
+    {
+      "id": "comments-other",
+      "kind": "deny",
+      "path": "/tickets/202/comments",
+      "actor": "alice",
+      "expected_status": 403,
+      "compare_body_to": "comments-owner"
+    },
+    {
+      "id": "anonymous",
+      "kind": "regression",
+      "path": "/tickets/202",
+      "actor": null,
+      "expected_status": 401,
+      "expected_body_sha256": "8f399debe52f271e56918a3ef03cd90d60776f7c972e6807b1ef2a7437c1040c"
+    },
+    {
+      "id": "missing",
+      "kind": "regression",
+      "path": "/tickets/999",
+      "actor": "alice",
+      "expected_status": 404,
+      "expected_body_sha256": "37ec4665a8102d115ffd1ac20dae94c98b4dac64b0c1a68228aa2a531caeb35d"
+    },
+    {
+      "id": "manager",
+      "kind": "control",
+      "path": "/tickets/202",
+      "actor": "mira",
+      "expected_status": 200,
+      "expected_body_sha256": "abd52fa83c6d05a80a60b3b49e4b5d40ddda7c57132717be0ce252225229bd4a"
+    },
+    {
+      "id": "admin-comments",
+      "kind": "control",
+      "path": "/tickets/202/comments",
+      "actor": "admin",
+      "expected_status": 200,
+      "expected_body_sha256": "58e289522477be175311e24c7140c52a66a9d74da970dcd4b37185b00c0c8c02"
+    }
+  ]
+}

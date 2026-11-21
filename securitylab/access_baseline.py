@@ -38,7 +38,7 @@ def _unique_pairs(pairs):
     return obj
 
 
-def read_external_policy(store, snapshot_id: str, path: Path) -> tuple[dict, str]:
+def read_external_document(store, snapshot_id: str, path: Path) -> tuple[dict, str]:
     """Read an explicit, independent file, not a policy embedded by the target."""
     if not isinstance(path, Path):
         raise PolicyError('Explicit policy file path required')
@@ -85,8 +85,13 @@ def read_external_policy(store, snapshot_id: str, path: Path) -> tuple[dict, str
         raise
     except (ValueError, UnicodeDecodeError) as exc:
         raise PolicyError('Policy must be strict UTF-8 JSON') from exc
-    validate_policy(policy)
     return policy, hashlib.sha256(raw).hexdigest()
+
+
+def read_external_policy(store, snapshot_id: str, path: Path):
+    policy, sha = read_external_document(store, snapshot_id, path)
+    validate_policy(policy)
+    return policy, sha
 
 
 def validate_policy(policy: dict) -> None:

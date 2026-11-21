@@ -1,0 +1,69 @@
+{
+  "events": [
+    {
+      "t": 0.04,
+      "source": "securitylab",
+      "text": "Подготовка и совместимость проекта проверены; исходный снимок не изменяется."
+    },
+    {
+      "t": 0.458,
+      "source": "securitylab",
+      "text": "Red · решение 1/12; ожидаем ответ."
+    },
+    {
+      "t": 0.463,
+      "source": "securitylab",
+      "text": "Ожидаем ответ модели."
+    },
+    {
+      "t": 161.54,
+      "source": "securitylab",
+      "text": "Независимое HTTP-наблюдение: 1 запрос(ов) в подготовленном стенде."
+    },
+    {
+      "t": 167.111,
+      "source": "securitylab",
+      "text": "Red · решение 2/12; ожидаем ответ."
+    },
+    {
+      "t": 167.115,
+      "source": "securitylab",
+      "text": "Ожидаем ответ модели."
+    },
+    {
+      "t": 934.202,
+      "source": "securitylab",
+      "text": "Результат: BLOCKED · Причина: Invalid research corrective feedback"
+    }
+  ],
+  "stages": [
+    {
+      "id": "prepare",
+      "label": "Подготовка",
+      "role": "prepare",
+      "state": "done",
+      "startedAt": 0.04,
+      "detail": "Подготовка и совместимость проекта проверены; исходный снимок не изменяется.",
+      "finishedAt": 0.04
+    },
+    {
+      "id": "red",
+      "label": "Red · анализ",
+      "role": "red",
+      "state": "failed",
+      "startedAt": 0.458,
+      "detail": "Ожидаем ответ модели.",
+      "finishedAt": 934.202
+    },
+    {
+      "id": "result",
+      "label": "Результат",
+      "role": "result",
+      "state": "failed",
+      "startedAt": 934.202,
+      "detail": "Результат: BLOCKED · Причина: Invalid research corrective feedback",
+      "finishedAt": 934.202
+    }
+  ],
+  "cancelRequested": false
+}

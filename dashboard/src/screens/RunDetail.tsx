@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Artifact, Check, CheckGroup, Run, Stage, StageOutcome } from '../adapter/types'
 import { useStore } from '../state/store'
 import { ScreenHead } from '../components/layout'
@@ -8,6 +8,8 @@ import {
 import { StageBars } from '../components/charts'
 import { useIsMobile } from '../lib/hooks'
 import { fmtDateTime, fmtSec } from '../lib/format'
+import { translateStageText } from '../lib/ru'
+import { stagePresentation } from '../lib/stagePresentation'
 
 /* ---------- время этапа ---------- */
 
@@ -69,10 +71,10 @@ function CheckTable({ checks, mobile }: { checks: Check[]; mobile: boolean }) {
                 { k: 'Актор', v: c.actor },
                 { k: 'Запрос', v: `${c.method} ${c.path}`, mono: true },
                 { k: 'Ожидается', v: `HTTP ${c.expectStatus}` },
-                { k: 'baseline', v: <ProbeCell {...c.baseline} /> },
-                { k: 'candidate', v: <ProbeCell {...c.candidate} /> },
+                { k: 'Исходное приложение', v: <ProbeCell {...c.baseline} /> },
+                { k: 'Исправление', v: <ProbeCell {...c.candidate} /> },
                 ...(c.candidateRetry ? [{ k: 'попытка 2', v: <ProbeCell {...c.candidateRetry} /> }] : []),
-                ...(c.recheck ? [{ k: 'recheck', v: <ProbeCell {...c.recheck} /> }] : []),
+                ...(c.recheck ? [{ k: 'Повторная проверка', v: <ProbeCell {...c.recheck} /> }] : []),
               ]} />
             </div>
             {c.note && <p className="mt-2.5 text-[12px] leading-snug text-ink3">{c.note}</p>}
@@ -88,12 +90,12 @@ function CheckTable({ checks, mobile }: { checks: Check[]; mobile: boolean }) {
           <thead>
             <tr>
               <th>Сценарий</th>
-              <th>Актор · запрос</th>
+              <th>Пользователь · запрос</th>
               <th>Ожид.</th>
-              <th>baseline</th>
-              <th>candidate</th>
+              <th>Исходное приложение</th>
+              <th>Исправление</th>
               <th>попытка 2</th>
-              <th>recheck</th>
+              <th>Повторная проверка</th>
             </tr>
           </thead>
           <tbody>
@@ -133,27 +135,22 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
   const [artBusy, setArtBusy] = useState(false)
   const mobile = useIsMobile()
 
+  const loadedIdentity = useRef<{ adapter: typeof adapter; runId: string } | null>(null)
   useEffect(() => {
     let alive = true
-    setRaw(undefined)
-    setLoadErr(null)
-    adapter.getRun(runId)
-      .then((r) => { if (alive) { setRaw(r); reportConnection(true) } })
-      .catch((e) => { if (alive) { setRaw(null); setLoadErr(e instanceof Error ? e.message : 'ошибка связи'); reportConnection(false) } })
-    return () => { alive = false }
-  }, [adapter, runId, bumpData, dataVersion, reportConnection])
-
-  // polling активного прогона в HTTP-режиме (#2): обновление без перезагрузки,
-  // экспоненциальный backoff при ошибке, остановка на терминальном статусе.
-  // Завершение НЕ симулируется по локальным часам — состояние приходит с сервера.
-  const execNow = raw?.exec
-  useEffect(() => {
-    if (mode === 'demo') return
-    if (!raw || !(execNow === 'running' || execNow === 'queued')) return
-    let alive = true
-    let timer: ReturnType<typeof setTimeout>
+    let timer: ReturnType<typeof setTimeout> | undefined
     let delay = 2500
-    const tick = async () => {
+    const previous = loadedIdentity.current
+    if (!previous || previous.adapter !== adapter || previous.runId !== runId) {
+      loadedIdentity.current = { adapter, runId }
+      setRaw(undefined)
+      setLoadErr(null)
+      setTab('progress')
+      setOpenArtifact(null)
+    }
+    // Sequential polling. Refreshes (including cancellation) keep the mounted
+    // content; only a different run/backend gets the initial loading screen.
+    const refresh = async () => {
       try {
         const r = await adapter.getRun(runId)
         if (!alive) return
@@ -161,17 +158,21 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
         setLoadErr(null)
         reportConnection(true)
         delay = 2500
+        if (mode !== 'demo' && (r?.exec === 'running' || r?.exec === 'queued')) {
+          timer = setTimeout(refresh, delay)
+        }
       } catch (e) {
         if (!alive) return
+        setRaw((current) => current ?? null)
         setLoadErr(e instanceof Error ? e.message : 'ошибка связи')
         reportConnection(false)
         delay = Math.min(delay * 2, 15000)
+        if (mode !== 'demo') timer = setTimeout(refresh, delay)
       }
-      if (alive) timer = setTimeout(tick, delay)
     }
-    timer = setTimeout(tick, delay)
+    void refresh()
     return () => { alive = false; clearTimeout(timer) }
-  }, [adapter, runId, mode, execNow, reportConnection])
+  }, [adapter, runId, dataVersion, mode, reportConnection])
 
   const run = raw ? liveRun(raw) : null
 
@@ -202,8 +203,8 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
       pushToast(res.reason, 'error')
       return
     }
-    // сервер подтвердил остановку — перечитываем замороженное состояние
-    pushToast(`Прогон ${res.runId}: отмена подтверждена сервером (${res.state}).`, 'ok')
+    // Запрос принят; финальный статус выставляет worker после очистки.
+    pushToast(`Прогон ${res.runId}: ${res.state === "CANCEL_REQUESTED" ? "отмена запрошена, ожидаем очистки" : res.state}.`, 'ok')
     bumpData()
   }
 
@@ -263,7 +264,7 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
               </Button>
             )}
             {(run.exec === 'running' || run.exec === 'queued') && (
-              <Button variant="danger" icon="stop" onClick={cancelRun} disabled={!run.demo} title={!run.demo ? "Безопасная отмена access-ai ещё не подключена" : ""}>Отменить</Button>
+              <Button variant="danger" icon="stop" onClick={cancelRun} disabled={run.cancelRequested || (!run.demo && !run.cancelSupported)} title={!run.demo && !run.cancelSupported ? "Этот запуск не управляется текущим сервером" : ""}>{run.cancelRequested ? "Останавливаем…" : "Отменить"}</Button>
             )}
           </>
         }
@@ -282,6 +283,8 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
         </div>
       )}
 
+      {run.mode === 'S10_DEFENSIVE_REVIEW' && <Note title="Защитное ревью">Агент читает исходники и предлагает изменения. Исполнитель запускает только функциональные проверки оператора. Успешный результат означает прохождение этих тестов, а не доказательство безопасности приложения.</Note>}
+      {run.mode === 'S11_RESEARCH_CYCLE' && <Note title="Самостоятельное исследование">Red сама выбирала, что изучать и какие гипотезы проверять; заранее заданного списка сценариев ей не передавалось. Нарушением считается только гипотеза, воспроизведённая независимым проверяющим на свежем стенде. Отсутствие находок и полный бюджет не означают, что приложение безопасно.</Note>}
       {/* объяснение статуса: причины из run.error/attempts, не универсальный шаблон (#7) */}
       <div className="mb-8 space-y-2.5">
         {run.exec === 'running' && (
@@ -293,7 +296,7 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
         {run.exec === 'blocked' && (
           <Note tone="warn" title="BLOCKED — не «проект безопасен»:">
             {run.error ?? 'проверка не доведена до результата'}.
-            {run.verdict === 'REPRODUCED' && ' Нарушение уже воспроизведено на baseline; исправление не завершено.'}
+            {run.verdict === 'REPRODUCED' && ' Нарушение уже воспроизведено на исходном приложении; исправление не завершено.'}
             {run.attempts.some((a) => a.rejectionReasons.length > 0) && ' Причины отклонения попыток — на вкладке «Предложения и попытки».'}
           </Note>
         )}
@@ -312,10 +315,10 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
           <Note tone="warn" title="Нарушение наблюдается на исправлении:">{run.error ?? 'проверка зафиксировала нарушение политики после применения патча'}</Note>
         )}
         {run.verdict === 'UNKNOWN' && (
-          <Note tone="warn" title="Неизвестное значение security_verdict:">показано нейтрально с исходной строкой: {run.verdictRaw ?? '—'}. Обновите DTO-мэппинг после сверки с ядром.</Note>
+          <Note tone="warn" title="Неизвестный результат проверки:">показано нейтрально с исходной строкой: {run.verdictRaw ?? '—'}. Обновите DTO-мэппинг после сверки с ядром.</Note>
         )}
         {run.finding === 'UNKNOWN' && (
-          <Note tone="warn" title="Неизвестное значение finding_status:">показано нейтрально с исходной строкой: {run.findingRaw ?? '—'}.</Note>
+          <Note tone="warn" title="Неизвестный результат исправления:">показано нейтрально с исходной строкой: {run.findingRaw ?? '—'}.</Note>
         )}
       </div>
 
@@ -324,7 +327,7 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
         onChange={setTab}
         tabs={[
           { id: 'progress', label: 'Ход выполнения' },
-          { id: 'checks', label: 'Проверки', badge: run.checks.length ? String(run.checks.length) : undefined },
+          { id: 'checks', label: 'Проверки', badge: (run.checks.length || run.hypotheses?.length) ? String(run.checks.length || run.hypotheses?.length) : undefined },
           { id: 'attempts', label: 'Предложения и попытки', badge: run.attempts.length ? String(run.attempts.length) : undefined },
           { id: 'evidence', label: 'Доказательства' },
         ]}
@@ -343,16 +346,17 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
               )}
               <ol className="mt-6 list-none">
                 {run.stages.map((s) => (
-                  <li key={s.id} className="stagerow" data-state={s.state}>
+                  <li key={s.id} className="stagerow" data-state={s.state} data-outcome={stagePresentation(s).tone}>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
                         <span className={`text-[14px] font-semibold ${s.state === 'pending' || s.state === 'skipped' ? 'text-ink3' : ''} ${s.state === 'wait_model' ? 'breathing' : ''}`}>
-                          {s.label}
-                          {s.role && <span className="ml-2 text-[11.5px] font-bold text-ink3">{s.role}</span>}
+                          {translateStageText(s.label)}
+                          {s.role && !translateStageText(s.label).toLowerCase().includes(translateStageText(s.role).toLowerCase()) && <span className="ml-2 text-[11.5px] font-bold text-ink3">{translateStageText(s.role)}</span>}
                         </span>
                         <StageTime s={s} />
                       </div>
-                      {s.detail && <p className="mt-0.5 text-[12.5px] leading-snug text-ink2">{s.detail}</p>}
+                      {stagePresentation(s).label && <p className="mt-1 text-[12px] font-semibold">{stagePresentation(s).label}</p>}
+                      {s.detail && <p className="mt-0.5 text-[12.5px] leading-snug text-ink2">{translateStageText(s.detail)}</p>}
                     </div>
                   </li>
                 ))}
@@ -367,9 +371,17 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
                     <span className="text-ink3">[T+{fmtSec(e.t)}] </span>
                     <span className="font-semibold text-accent">{e.source}</span>
                     <span>: </span>
-                    <span>{e.text}</span>
+                    <span>{translateStageText(e.text)}</span>
                   </div>
                 ))}
+                {run.error && !run.events.some((e) => e.text.includes(run.error!)) && (
+                  <div className="mt-3 border-t border-line pt-3 text-dangerink" data-testid="run-error">
+                    <strong>Причина завершения: </strong>{run.error}
+                  </div>
+                )}
+                {run.exec === 'blocked' && !run.error && (
+                  <div className="mt-3 text-ink2">Причина BLOCKED не записана. Откройте summary и записи вызовов во вкладке «Доказательства».</div>
+                )}
               </div>
             </Card>
           </div>
@@ -390,11 +402,71 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
         {/* ============ проверки ============ */}
         {tab === 'checks' && (
           <div className="space-y-8">
-            {run.checks.length === 0 ? (
+            {run.hypotheses && run.hypotheses.length > 0 && (
+              <section>
+                <Overline>Гипотезы Red и независимое подтверждение · {run.hypotheses.length}</Overline>
+                <div className="mt-3 overflow-x-auto">
+                  <table className="w-full border-collapse text-[13px]">
+                    <thead>
+                      <tr className="border-b border-line text-left text-[11.5px] uppercase tracking-wider text-ink3">
+                        <th className="py-2 pr-3">#</th>
+                        <th className="py-2 pr-3">Маршрут · актор</th>
+                        <th className="py-2 pr-3">Гипотеза (данные Red)</th>
+                        <th className="py-2 pr-3">Ожидание</th>
+                        <th className="py-2 pr-3">Наблюдение</th>
+                        <th className="py-2 pr-3">Свежий стенд</th>
+                        <th className="py-2 pr-3">Статус</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {run.hypotheses.map((h) => (
+                        <tr key={h.n} className="border-b border-line align-top" data-testid={`hypothesis-${h.n}`}>
+                          <td className="py-2.5 pr-3 font-mono text-ink3">{h.n}</td>
+                          <td className="py-2.5 pr-3 font-mono text-[12.5px]">{h.path}<br /><span className="text-ink3">{h.actor}</span></td>
+                          <td className="py-2.5 pr-3 max-w-sm">
+                            <span className="leading-snug">{h.description}</span>
+                            <br /><span className="text-[12px] text-ink3">основание: {h.basis}</span>
+                          </td>
+                          <td className="py-2.5 pr-3 font-mono font-semibold">{h.expectedStatus}</td>
+                          <td className="py-2.5 pr-3 font-mono">
+                            {h.observedStatus ?? '—'}
+                            {h.observedStage && <span className="text-[11.5px] text-ink3"> · {h.observedStage}</span>}
+                          </td>
+                          <td className="py-2.5 pr-3 font-mono">
+                            {h.confirmStatus != null ? (
+                              <>
+                                {h.confirmStatus}
+                                {h.confirmStage && <span className="text-[11.5px] text-ink3"> · {h.confirmStage}</span>}
+                              </>
+                            ) : h.state === 'consistent' ? (
+                              <span className="text-[12px] text-ink3">не требовался: наблюдение совпало с документацией</span>
+                            ) : '—'}
+                          </td>
+                          <td className="py-2.5 pr-3">
+                            <Chip tone={h.state === 'confirmed' ? 'danger' : h.state === 'consistent' || h.state === 'refuted' ? 'mint' : 'smoke'} mono>
+                              {h.state === 'confirmed' ? 'ПОДТВЕРЖДЕНО' : h.state === 'refuted' ? 'не воспроизведено' : h.state === 'consistent' ? 'соответствует документации' : h.state === 'unconfirmed' ? 'не подтверждено' : 'недостаточно данных'}
+                            </Chip>
+                            {h.patch && <p className="mt-1.5 text-[11.5px] leading-snug text-ink3">{h.patch}</p>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="mt-3 max-w-3xl text-[12.5px] leading-relaxed text-ink3">
+                  Статусы считаются ядром по независимым наблюдениям: гипотеза подтверждена, только если свежий стенд
+                  воспроизвёл наблюдение Red, а наблюдение противоречит ожиданию из документации. Свежий стенд запускается
+                  только для расхождений: если наблюдение уже совпало с документацией (consistent), отдельное воспроизведение
+                  не требуется — вместо статуса показана причина. Идентификатор после статуса — стадия независимого наблюдения
+                  (http_NN, http_assist_NN, confirm). Описание Red — данные, не доказательство.
+                </p>
+              </section>
+            )}
+            {run.checks.length === 0 && !run.hypotheses?.length ? (
               <EmptyState icon="file" title="Проверки не выполнялись">
                 Прогон завершился раньше этапа проверок — таблица пуста по реальной причине, а не скрыта.
               </EmptyState>
-            ) : (
+            ) : run.checks.length === 0 ? null : (
               GROUP_ORDER.map((g) => {
                 const items = run.checks.filter((c) => c.group === g)
                 if (!items.length) return null
@@ -418,13 +490,13 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
               <Card>
                 <Overline>Red · описание проблемы</Overline>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Chip tone="accent" mono>предложение AI · сценарий {run.redProposal.scenarioNo}</Chip>
+                  <Chip tone="accent" mono>{run.mode === 'S10_DEFENSIVE_REVIEW' ? 'Замечания ревью · не доказательства' : `предложение AI · сценарий ${run.redProposal.scenarioNo}`}</Chip>
                 </div>
                 <p className="mt-4 max-w-3xl text-[14.5px] leading-relaxed">{run.redProposal.summary}</p>
                 <div className="mt-3 max-w-3xl">
                   <KV rows={[
                     { k: 'Точка входа', v: run.redProposal.entry, mono: true },
-                    { k: 'Запрос сценария', v: `${run.redProposal.method} ${run.redProposal.path}`, mono: true },
+                    { k: run.mode === 'S10_DEFENSIVE_REVIEW' ? 'Режим' : 'Запрос сценария', v: run.mode === 'S10_DEFENSIVE_REVIEW' ? 'Чтение и поиск по коду' : `${run.redProposal.method} ${run.redProposal.path}`, mono: true },
                   ]} />
                 </div>
                 <p className="mt-4 text-[12.5px] leading-snug text-ink3">
@@ -492,14 +564,36 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
                 <KV rows={[
                   { k: 'AI-профиль', v: run.aiConfigId },
                   { k: 'Модель прогона', v: run.aiConfiguration?.model ?? 'нет данных', mono: true },
-                  { k: 'Digest модели', v: run.aiConfiguration?.model_digest ?? 'нет данных', mono: true },
+                  { k: 'Отпечаток модели', v: run.aiConfiguration?.model_digest ?? 'нет данных', mono: true },
                   { k: 'Образ', v: `${run.tech.image} · ${run.tech.imageDigest}`, mono: true },
                   { k: 'Сеть', v: run.tech.network },
                   { k: 'Хеш конфигурации', v: run.tech.configHash, mono: true },
                   { k: 'Снимок (pin)', v: run.tech.snapshotPin, mono: true },
+                  ...(run.preparationId ? [{ k: 'Подготовка исследования', v: run.preparationId, mono: true }] : []),
                   { k: 'Очистка', v: run.tech.cleanup },
+                  { k: 'Код выполнения', v: run.exec, mono: true },
+                  { k: 'Код проверки', v: run.verdict, mono: true },
+                  { k: 'Код исправления', v: run.finding ?? 'null', mono: true },
                 ]} />
               </div>
+              {run.coverage && (
+                <div className="mt-5 max-w-3xl">
+                  <Overline>Бюджет и использование · факты, без процентов</Overline>
+                  <div className="mt-3">
+                    <KV rows={[
+                      { k: 'Решения модели', v: `${run.coverage.decisions_used} из ${run.coverage.budget.decisions}` },
+                      { k: 'HTTP-наблюдения Red', v: `${run.coverage.requests_used} из ${run.coverage.budget.requests}` },
+                      { k: 'Независимые проверки', v: `${run.coverage.verification_requests} запрос(ов) верификатора` },
+                      { k: 'Время', v: `${run.coverage.seconds_used} из ${run.coverage.budget.seconds} с` },
+                    ]} />
+                  </div>
+                </div>
+              )}
+              {run.notes && run.notes.length > 0 && (
+                <div className="mt-5 max-w-3xl space-y-2">
+                  {run.notes.map((n, i) => <Note key={i}>{n}</Note>)}
+                </div>
+              )}
               <div className="mt-5 max-w-3xl">
                 <Note>{run.tech.hashDisclaimer}</Note>
               </div>
@@ -545,7 +639,7 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
             )}
             <Untrusted text={openArtifact.content ?? ''} />
             <p className="text-[12px] text-ink3">
-              {mode === 'demo' ? 'Демо-содержимое из браузера.' : mode === 'sim-server' ? 'Источник: сервер симуляции (demo: true) — коммиты и события сценария фиктивные.' : 'Содержимое отдаёт backend по идентификатору.'}
+              {mode === 'demo' ? 'Демо-содержимое из браузера.' : mode === 'sim-server' ? 'Источник: сервер симуляции (demo: true) — коммиты и события сценария фиктивные.' : 'Содержимое отдаёт сервер по идентификатору.'}
             </p>
           </div>
         )}

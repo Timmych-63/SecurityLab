@@ -1,0 +1,31 @@
+{
+  "stage": "S3",
+  "commit": "782916138b34f1e7893b7495ec7e067d3e5d16cb",
+  "base_commit": "3cbbbdfb96fcf6d10a25829bf23e455042fce4ed",
+  "automated_tests": {
+    "passed": 90,
+    "live_docker": false
+  },
+  "files": {
+    "README.md": "4840bbe280d57d7a35b152613fa503d3fb9c214bb59cd68f9f2f5122aa57e57d",
+    "docs/ACCEPTANCE.md": "cac90f147471cc9fb8d9f84c56bed32b3cddec015bdb3eaa7a32817b6d20adfa",
+    "docs/ARCHITECTURE.md": "7b9136fb4cd654a476068e2ea264c35ba3fc017748d8cb828c3ea92392e5d841",
+    "docs/CHANGELOG.md": "8a3fde36e23195a8e0cf46907ef666cff463bf498d1514b306e9a4a7fde318a3",
+    "docs/S3_WORKFLOW.md": "5b5a869f67eea0282b7a39c45d63800132f212100a01541be85800bb58da5201",
+    "docs/STATE.md": "6f8850ca56afdd722a892aa4f07cd75d0241252d03520a68b3c4119396c2d76c",
+    "docs/TEST_RESULTS.md": "29cea06ff4cbff1110f8acac5e177497504819d38d9bfd15e52047693df0e768",
+    "docs/test-s3-output.txt": "69ddf812465ca66fa89b310af93508d615002dd711accfbd13a0158480e23dae",
+    "securitylab/cli.py": "92d0116da368c6eb26fa9585251b91c7a421ad3970f7163d2c97ffc709b3d05a",
+    "securitylab/container_runner.py": "890476f3d4f6370be862d41c9ce75bed467a94c99a1d292186695a6133a280f4",
+    "securitylab/docker_fixture.py": "cb78536868edf1c5d4d7eb11dad9dba2a6b7ba73b59b78fd70a0c8281b1e398b",
+    "securitylab/orchestrator.py": "df4561fff3edebc2024107f590ddffb27cceaeefb227a1f6e73fc07735ac7d3e",
+    "securitylab/report.py": "aaefb7ce64141e15d195e5fa359023d3e8ebf6061b827a2d234a9cb679cdb788",
+    "securitylab/runner.py": "d30a528a6c90dd63c8531b4aa5aa08966cd2dc68a5ff7f2c6d11f2f2c674ac40",
+    "securitylab/storage.py": "24675cf62e0a81fc1dab06449a831ff74c4eba93464fb58195ad60ddf2538fa0",
+    "securitylab/validator.py": "0079890ff986496c666aa12d5071c2fabd352f2bea7453dd0762b644a7c0a809",
+    "tests/test_container_runner.py": "0109a17271fc082377bdcf0c9478f8556322be58561fa5c3a2520e845bee215f",
+    "tests/test_docker_workflow.py": "38459d499d3ba618e66a4db59ef6d18584edf830007da57a8c7397efa797d640",
+    "SecurityLab_S3.git.bundle": "359f92a985474c8a898891f0a07f4e04d0f6f9ecb920cd8a8668191221b19e55",
+    "README_S3_UPDATE.txt": "abf168018141f2f1e7084869f255ae9ca7d0677ff0ba756ad31a936e79e4a721"
+  }
+}

@@ -16,9 +16,37 @@ class ConfigurationTests(unittest.TestCase):
         for value in [{'context_tokens':8192}, {'timeout_seconds':True}, {'timeout_seconds':1201},
                       {'max_output_tokens':5000}, {'server_url':'https://example.com'},
                       {'server_url':'http://model:11434/v1'}, {'tools':['shell']},
-                      {'model':'other'}, {'model_digest':'a'*64}]:
+                      {'model':'other'}, {'model_digest':'a'*64},
+                      {'frequency_penalty':2.5}, {'frequency_penalty':-0.1},
+                      {'frequency_penalty':'high'}, {'presence_penalty':True},
+                      {'presence_penalty':3}]:
             with self.subTest(value=value), self.assertRaises(PolicyError): from_dict(value)
         with self.assertRaises(PolicyError): Limits(timeout=1200)
+
+    def test_generation_penalties_optional(self):
+        self.assertIsNone(AIConfig().frequency_penalty)
+        self.assertIsNone(AIConfig().presence_penalty)
+        config = from_dict({'frequency_penalty': 0.3, 'presence_penalty': 1})
+        self.assertEqual((config.frequency_penalty, config.presence_penalty), (0.3, 1))
+
+    def test_penalties_reach_request_overrides_when_set(self):
+        config = AIConfig(model='other:2b', model_digest='a'*64,
+                          frequency_penalty=0.4, presence_penalty=0.2)
+        class Fake(Agent):
+            instances=[];tool_list=[];messages=[];reply='{"ready":true}'
+        invoke(request('smoke'), Fake, config=config)
+        kw = Fake.instances[-1].kwargs
+        self.assertEqual(kw['request_overrides'],
+                         {'temperature': 0, 'response_format': {'type': 'json_object'},
+                          'frequency_penalty': 0.4, 'presence_penalty': 0.2})
+
+    def test_penalties_absent_when_unset(self):
+        config = AIConfig(model='other:2b', model_digest='a'*64)
+        class Fake(Agent):
+            instances=[];tool_list=[];messages=[];reply='{"ready":true}'
+        invoke(request('smoke'), Fake, config=config)
+        self.assertEqual(Fake.instances[-1].kwargs['request_overrides'],
+                         {'temperature': 0, 'response_format': {'type': 'json_object'}})
 
     def test_explicit_file_no_silent_fallback(self):
         with tempfile.TemporaryDirectory() as d:

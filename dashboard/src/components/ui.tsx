@@ -74,8 +74,8 @@ export const execLabel: Record<ExecStatus, string> = {
   running: 'выполняется',
   completed: 'завершён',
   failed: 'ошибка выполнения',
-  blocked: 'остановлено: BLOCKED',
-  timeout: 'остановлено: TIMEOUT',
+  blocked: 'проверка остановлена',
+  timeout: 'превышено время ожидания',
   cancelled: 'отменён',
 }
 
@@ -83,19 +83,19 @@ export const execLabel: Record<ExecStatus, string> = {
 export function verdictLabel(v: Verdict, raw?: string): string {
   if (v === 'POLICY_VIOLATION_OBSERVED') return 'нарушение политики наблюдается'
   if (v === 'POLICY_VIOLATION_NOT_OBSERVED_ON_CHECKED_FIX') return 'нарушение не наблюдается на проверенном исправлении'
-  if (v === 'REPRODUCED') return 'нарушение воспроизведено · REPRODUCED'
-  if (v === 'NOT_EVALUATED') return 'не оценивалось · NOT_EVALUATED'
+  if (v === 'REPRODUCED') return 'нарушение воспроизведено'
+  if (v === 'NOT_EVALUATED') return 'не оценивалось'
   return `неизвестный вердикт${raw ? `: ${raw}` : ''} · UNKNOWN`
 }
 
 export function findingLabel(v: Finding, raw?: string): string {
-  if (v === 'FIXED') return 'FIXED · исправление прошло независимую проверку'
-  if (v === 'REPRODUCED') return 'REPRODUCED · нарушение воспроизведено'
+  if (v === 'FIXED') return 'исправление прошло независимую проверку'
+  if (v === 'REPRODUCED') return 'нарушение воспроизведено'
   if (v === 'POLICY_VIOLATION_NOT_OBSERVED_ON_CHECKED_FIX') return 'нарушение не наблюдается на проверенном исправлении'
   if (v === 'POLICY_VIOLATION_OBSERVED') return 'нарушение наблюдается на исправлении'
-  if (v === 'NEEDS_REVIEW') return 'нужно решение оператора · NEEDS_REVIEW'
-  if (v === 'NOT_EVALUATED') return 'не оценивалось · NOT_EVALUATED'
-  if (v === null) return 'не оценивалось (null) — оценка не выполнялась'
+  if (v === 'NEEDS_REVIEW') return 'нужно решение оператора'
+  if (v === 'NOT_EVALUATED') return 'не оценивалось'
+  if (v === null) return 'оценка не выполнялась'
   return `неизвестный статус${raw ? `: ${raw}` : ''} · UNKNOWN`
 }
 
@@ -373,8 +373,8 @@ export function StatusTriple({ exec, verdict, verdictRaw, finding, findingRaw }:
     <div className="grid gap-3 sm:grid-cols-3">
       {[
         { k: 'Выполнение', mono: false, v: <ExecChip v={exec} /> },
-        { k: 'security_verdict', mono: true, v: <VerdictChip v={verdict} raw={verdictRaw} /> },
-        { k: 'finding_status', mono: true, v: <FindingChip v={finding} raw={findingRaw} /> },
+        { k: 'Результат проверки безопасности', mono: true, v: <VerdictChip v={verdict} raw={verdictRaw} /> },
+        { k: 'Результат исправления', mono: true, v: <FindingChip v={finding} raw={findingRaw} /> },
       ].map((cell) => (
         <div key={cell.k} className="rounded-card bg-surface p-4 shadow-[0_0_0_1px_var(--line)]">
           <div className={`text-[10.5px] font-bold uppercase tracking-[0.1em] text-ink3 ${cell.mono ? 'font-mono tracking-normal' : ''}`}>{cell.k}</div>

@@ -1,0 +1,17 @@
+{
+  "release": "S6.2.2",
+  "parent_commit": "facdc76",
+  "commit": "2ed1a3458636a2d395bee80efdca887c16e062d2",
+  "install_only": [
+    "tests/test_snapshots.py"
+  ],
+  "notes": "No SecurityLab runtime modules changed; apply over S6.2.1",
+  "files": {
+    "tests/test_snapshots.py": "635d438c17b2d3bbdfaea8cba798c8ef89d5fc16409a642d1afed57ebb282e9d",
+    "README_S6_2_2_RU.md": "dd8f6196aa1b8f849472e4a1951d77b3bf4459b3f8eaca3ac7711df07a842262",
+    "docs/S6_2_2.md": "fa358a8129aa526fc6f51438ac9000a9850dd29810db6c1a8631ee3a468c4982",
+    "docs/STATE.md": "019022d7cec61199a268bc7ffe30f27863c631133b6015296de4e3f988a734b6",
+    "docs/CHANGELOG.md": "abbfe7dba7f8937e52167f9aeb14762d7a84b9f37878fe049b69b6eb85fec33d"
+  },
+  "bundle_sha256": "c0d8ea583726762fcb4ed262232bb4d497c21d47fd92831da3fea934123d5fe7"
+}

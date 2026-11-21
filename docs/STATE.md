@@ -1,3 +1,38 @@
+# S11.3 status (2026-11-20)
+
+S11.3 addresses live run #6 findings (first full live cycle of stages 2-3: a single
+trivial `/health` hypothesis, state consistent). Red prompt gains category
+navigation: the core computes unprobed ROUTES x ACTORS pairs (anonymous first, then
+each account, then concrete template instantiations) and hands them to the model as
+`SUGGESTED NEXT PROBES` (map+actors only, never defect hints) plus a systematic
+coverage rule. Hypothesis rows now carry `observed_stage`/`confirm_stage`; the UI
+explains the empty "Свежий стенд" cell for consistent hypotheses instead of a bare
+dash. New operator tooling: `scripts/Start-SecurityLab.ps1` (post-reboot start),
+`restart: unless-stopped` for the model service, PS 5.1-safe `apply_S11_3.ps1`
+(NativeCommandError fix around docker calls, CACHED control on COPY securitylab).
+Live Blue scenario prepared: `examples/research/authznotes.md` + `.setup.json` over
+the authz snapshot (expected 403 violation with a 200 body-hash anchor, inside Blue
+v1 limits). 420 automated tests PASS (7 new; simulated model/observer). Live run #7
+(coverage) and live Blue run are pending on the user machine. See
+`README_S11_3_RU.md` and `docs/S11_1_RESEARCH_CYCLE_RU.md`.
+
+---
+
+# S11.1 status (2026-11-17)
+
+S11.1 implements the unified research entry (dashboard prepare API + full readiness
+with concrete failure reasons + supersede invalidation) and the first working
+Red/confirm/Blue cycle (`research_cycle.py`, `research_contract.py`) on the
+existing bounded FastAPI executor. Budgets are enforced programmatically; Red
+chooses its own read/search/GET actions without any defect list; violations
+require independent reproduction on a fresh stand; Blue patches stay in an
+isolated Git copy with baseline/candidate/recheck evidence. 385 automated tests
+PASS (22 new; simulated model/observer). Dashboard built; refresh/launch/contract
+UI checks PASS. NOT yet run with live model (qwen3.5:2b via Hermes) or live
+Docker — acceptance (plan stage 5) is pending. See `docs/S11_1_RESEARCH_CYCLE_RU.md`.
+
+---
+
 # S7.1 status (2026-11-09)
 
 S6.3d accepted on Windows: 17 tests OK and real 3-request FastAPI package

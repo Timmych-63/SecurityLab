@@ -1,0 +1,241 @@
+{
+  "entry": "app/main.py",
+  "files": [
+    {
+      "file": "app/__init__.py",
+      "lines": 0,
+      "imports": [],
+      "functions": []
+    },
+    {
+      "file": "app/auth.py",
+      "lines": 7,
+      "imports": [
+        "data",
+        "fastapi"
+      ],
+      "functions": [
+        {
+          "name": "actor",
+          "line": 4,
+          "parameters": [
+            "name"
+          ],
+          "calls": [
+            "HTTPException"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "app/comments.py",
+      "lines": 7,
+      "imports": [
+        "data",
+        "fastapi"
+      ],
+      "functions": [
+        {
+          "name": "read_comments",
+          "line": 4,
+          "parameters": [
+            "ticket_id",
+            "user"
+          ],
+          "calls": [
+            "COMMENTS.get",
+            "HTTPException",
+            "list"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "app/data.py",
+      "lines": 6,
+      "imports": [],
+      "functions": []
+    },
+    {
+      "file": "app/main.py",
+      "lines": 26,
+      "imports": [
+        "auth",
+        "comments",
+        "fastapi",
+        "tickets"
+      ],
+      "functions": [
+        {
+          "name": "health",
+          "line": 9,
+          "parameters": [],
+          "calls": [
+            "app.get"
+          ]
+        },
+        {
+          "name": "ticket",
+          "line": 13,
+          "parameters": [
+            "ticket_id",
+            "x_test_user"
+          ],
+          "calls": [
+            "Header",
+            "actor",
+            "app.get",
+            "read_ticket"
+          ]
+        },
+        {
+          "name": "comments",
+          "line": 17,
+          "parameters": [
+            "ticket_id",
+            "x_test_user"
+          ],
+          "calls": [
+            "Header",
+            "actor",
+            "app.get",
+            "read_comments"
+          ]
+        },
+        {
+          "name": "create",
+          "line": 21,
+          "parameters": [
+            "payload",
+            "x_test_user"
+          ],
+          "calls": [
+            "Body",
+            "Header",
+            "actor",
+            "app.post",
+            "create_ticket",
+            "payload.get"
+          ]
+        },
+        {
+          "name": "update",
+          "line": 25,
+          "parameters": [
+            "ticket_id",
+            "payload",
+            "x_test_user"
+          ],
+          "calls": [
+            "Body",
+            "Header",
+            "actor",
+            "app.patch",
+            "change_status",
+            "payload.get"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "app/tickets.py",
+      "lines": 26,
+      "imports": [
+        "data",
+        "fastapi"
+      ],
+      "functions": [
+        {
+          "name": "read_ticket",
+          "line": 4,
+          "parameters": [
+            "ticket_id",
+            "user"
+          ],
+          "calls": [
+            "HTTPException",
+            "TICKETS.get",
+            "dict"
+          ]
+        },
+        {
+          "name": "create_ticket",
+          "line": 10,
+          "parameters": [
+            "title",
+            "user"
+          ],
+          "calls": [
+            "HTTPException",
+            "dict",
+            "int",
+            "isinstance",
+            "len",
+            "max",
+            "str",
+            "title.strip"
+          ]
+        },
+        {
+          "name": "change_status",
+          "line": 17,
+          "parameters": [
+            "ticket_id",
+            "status",
+            "user"
+          ],
+          "calls": [
+            "HTTPException",
+            "TICKETS.get",
+            "dict"
+          ]
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "file": "app/main.py",
+      "handler": "health",
+      "line": 9
+    },
+    {
+      "method": "GET",
+      "path": "/tickets/{ticket_id}",
+      "file": "app/main.py",
+      "handler": "ticket",
+      "line": 13
+    },
+    {
+      "method": "GET",
+      "path": "/tickets/{ticket_id}/comments",
+      "file": "app/main.py",
+      "handler": "comments",
+      "line": 17
+    },
+    {
+      "method": "POST",
+      "path": "/tickets",
+      "file": "app/main.py",
+      "handler": "create",
+      "line": 21
+    },
+    {
+      "method": "PATCH",
+      "path": "/tickets/{ticket_id}",
+      "file": "app/main.py",
+      "handler": "update",
+      "line": 25
+    }
+  ],
+  "dependencies": [
+    "fastapi"
+  ],
+  "runtime": "Pinned FastAPI image; in-memory seed data; fresh container per batch",
+  "limitations": [
+    "Static declarations only; call names are not a complete call graph",
+    "No database/external services or repository installation scripts"
+  ]
+}

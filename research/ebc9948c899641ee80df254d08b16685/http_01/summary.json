@@ -1,0 +1,21 @@
+{
+  "stage": "http_01",
+  "status": "HTTP_CHECKS_PASSED",
+  "observations": [
+    {
+      "actor": "admin",
+      "actual_status": 200,
+      "body_bytes": 15,
+      "body_sha256": "a29ee2b15c494311c52521766e44af56a3ad2248e7a8ab465e5206463c13d288",
+      "body_truncated": false,
+      "error": null,
+      "expected_status": 200,
+      "passed": true,
+      "path": "/health"
+    }
+  ],
+  "image_id": "sha256:b62b2ceb4e5e2ab7e588773573b83a0f7d651b14311ed6acf6cc08afa9d98ac5",
+  "target_image_id": "sha256:9badebbc3174bd3f516ee785fe821aa2a5f519c7b9806475a998b77ed533bd09",
+  "cleanup": "PASS",
+  "receipt_sha256": "baba44370ba58662a6ff35397fbd17b67fe580299dab0d05f5b35ba075344579"
+}

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "context_id": "records-defensive",
+  "description": "Records service. Users read their own records. Read-only ownership checks; other operations are outside this profile.",
+  "identity": "trusted-test-user-header",
+  "actors": {
+    "alice": "user",
+    "bob": "user",
+    "charlie": "user"
+  },
+  "resources": [
+    {
+      "path": "/records/one",
+      "owner": "alice",
+      "reader_roles": [],
+      "expected_body_sha256": "7935b02d77c70bc29f69d3093c11211bb0b691a08f16ef8b731be5adc499328b"
+    },
+    {
+      "path": "/records/two",
+      "owner": "bob",
+      "reader_roles": [],
+      "expected_body_sha256": "8531a77fadaf01906bcdfa8603b5e15962270408a9c046cc1fce838c7ef71170"
+    }
+  ],
+  "profile": "defensive-review-v1",
+  "regressions": [
+    {
+      "path": "/records/one",
+      "actor": null,
+      "expected_status": 401,
+      "expected_body_sha256": "8f399debe52f271e56918a3ef03cd90d60776f7c972e6807b1ef2a7437c1040c"
+    },
+    {
+      "path": "/records/missing",
+      "actor": "alice",
+      "expected_status": 404,
+      "expected_body_sha256": "37ec4665a8102d115ffd1ac20dae94c98b4dac64b0c1a68228aa2a531caeb35d"
+    }
+  ]
+}

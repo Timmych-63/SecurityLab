@@ -1,0 +1,45 @@
+{
+  "project": "SecurityLab",
+  "stage": "S6.1",
+  "date": "2026-11-09",
+  "base_commit": "6bf3f56",
+  "head_commit": "e2ffcd30dc1d6f1f30c89b2ef30a964c49d9e9db",
+  "distribution": "overlay plus complete git bundle",
+  "new_tests": 22,
+  "focused_existing_tests": 12,
+  "verification": {
+    "repository": "22 local unit/negative tests PASS",
+    "blue_prompt": "5 local tests PASS",
+    "sandbox_check": "7 local tests PASS",
+    "git_bundle": "verify and clean clone PASS",
+    "full_legacy_suite": "NOT_CONFIRMED: blocked/timeout on this runner",
+    "windows_s61": "NOT_TESTED",
+    "live_ai_s61": "NOT_APPLICABLE: S6.1 metadata discovery only"
+  },
+  "important_limitations": [
+    "scan remains BLOCKED",
+    "profiles detection-only",
+    "no execution of user repositories",
+    "metadata hash not content verification"
+  ],
+  "files_sha256": {
+    "README.md": "28c447b065c2e30e8cacc06389912a77d443fbe7f44a8cc7ead3d16c4e5563ae",
+    "README_S6_1_RU.md": "3a74a0a1db08f748e76f5f0cbe76f36dcf8792b0c49daef9caff61defc120613",
+    "docs/STATE.md": "b249c5da3e1defe058a96bac9db5dd36b7a5302ed4a40837aeed5cb84ba084eb",
+    "docs/CHANGELOG.md": "ae0a185361a95380d85f724ed834c134ed2b8b4bcdc6b67d6e0e83c879b971db",
+    "docs/S6_1.md": "155cf84124d8cbc64c3ae86ddab483951657ea771d7f3cc83544e680e91e21fb",
+    "securitylab/cli.py": "8e9077e3feddf6482cd610556c62c3ee05ea98860344450e5e515a1e3cd89c62",
+    "securitylab/storage.py": "ff5dae00f26412a6aeca9c8ce312a640b071c203a6fe71d0e2df14e0ac39de20",
+    "securitylab/repository.py": "2f736f215c3f0318fe46091962026fc216d97fb78adff7bf5c0fcb6d8ccd228e",
+    "securitylab/projects.py": "f0518a15944026328739ed7a9cdcfe52d514c7ee3740a217a91e62b08a9d5297",
+    "tests/test_repository.py": "f422598451b56afedd52e33a41cc148fe49dc51024d7a10f674833f084503435",
+    "examples/s6_repos/go_service/go.mod": "0db601e8b398c6f21055439b645d23a6402573100170fb9407f6cab91d5f33cf",
+    "examples/s6_repos/go_service/main.go": "55a60bb97151b2b4b680462447ce60ec34511b14fa10d77440c97b9777101566",
+    "examples/s6_repos/node_api/package.json": "de7baff814326c3e36991730ef0842c23d19462432b5fc0d5aa2ec02186eca74",
+    "examples/s6_repos/node_api/src/app.js": "cc449eaa34c3e57b7b1b20b2505c5e4074130b9b9694a08f66e50875ccdcbbe7",
+    "examples/s6_repos/python_api/pyproject.toml": "9cfc95fa44d927acf798ff445ee43551cd2cc4dbeed0c3f4aa0340553dd4419c",
+    "examples/s6_repos/python_api/src/app.py": "fe3438285ff170a428ca393d56d6644871452fc04f591e470c40cec7229654bf",
+    "examples/s6_repos/python_api/tests/test_app.py": "f4e054e275adbb4aeb276542e9a752144476e34e618695553074ed7acefc40e7",
+    "SecurityLab_S6_1.bundle": "392dc992466309b38d97f495e301a4a8639b375c0026e2bfbb0fd8fbfb62e00c"
+  }
+}
