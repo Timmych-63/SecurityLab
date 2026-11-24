@@ -26,7 +26,7 @@ export function runElapsedSec(run: Run, nowMs: number): number {
 }
 
 /** Прогон активен, пока сценарий симуляции не дошёл до финала. */
-export function isRunActive(run: Run, nowMs: number): number {
+export function isRunActive(run: Run, nowMs: number): boolean {
   if (!run.script) return false
   return runElapsedSec(run, nowMs) < run.script.finishAt
 }

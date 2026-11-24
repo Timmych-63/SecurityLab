@@ -340,7 +340,7 @@ export function Tabs({ tabs, active, onChange }: { tabs: { id: string; label: st
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
     e.preventDefault()
     const idx = tabs.findIndex((t) => t.id === active)
-    const next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + NAV_LENGTH_FALLBACK(tabs)) % tabs.length
+    const next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length
     onChange(tabs[next].id)
     ;(e.currentTarget.querySelector<HTMLElement>(`[data-tab="${tabs[next].id}"]`))?.focus()
   }
@@ -365,10 +365,6 @@ export function Tabs({ tabs, active, onChange }: { tabs: { id: string; label: st
       })}
     </div>
   )
-}
-
-function NAV_LENGTH_FALLBACK(tabs: { id: string; label: string; badge?: string }[]) {
-  return tabs.length
 }
 
 /* ============ тройной статус прогона: три lucian-карточки ============ */
