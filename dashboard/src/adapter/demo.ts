@@ -26,7 +26,7 @@ export function runElapsedSec(run: Run, nowMs: number): number {
 }
 
 /** Прогон активен, пока сценарий симуляции не дошёл до финала. */
-export function isRunActive(run: Run, nowMs: number): boolean {
+export function isRunActive(run: Run, nowMs: number): number {
   if (!run.script) return false
   return runElapsedSec(run, nowMs) < run.script.finishAt
 }
@@ -173,6 +173,15 @@ export class DemoAdapter implements SecurityLabAdapter {
     return {
       ok: false,
       reason: `Деморежим: снимок создаёт backend (предлагаемый POST /api/projects/${projectId}/snapshots) через Git в изолированной копии. Создание снимка силами браузера было бы подделкой — операция отклонена.`,
+    }
+  }
+
+  async deleteProject(_id: string): Promise<BackendRefusal> {
+    await delay(250)
+    return {
+      ok: false,
+      reason:
+        'Деморежим: реестром проектов управляет локальный backend (DELETE /api/projects/{id}) — он удаляет запись, снимки проекта и их копии в state-каталоге. Браузер не стирает серверные данные, поэтому операция отклонена.',
     }
   }
 
@@ -334,6 +343,7 @@ export const ENDPOINTS = [
   { action: 'Список проектов и снимков', module: 'dashboard.py / projects.py / snapshots.py', endpoint: 'GET /api/projects', status: 'Работает', detail: 'Снимки входят в ответ; отдельного GET snapshots нет.' },
   { action: 'Регистрация проекта', module: 'projects.py', endpoint: 'POST /api/projects', status: 'Работает', detail: 'Регистрация локального пути без исполнения кода.' },
   { action: 'Создание снимка', module: 'snapshots.py', endpoint: 'POST /api/projects/{id}/snapshots', status: 'Работает', detail: 'Копирование допустимых файлов с фиксацией хешей.' },
+  { action: 'Удаление проекта', module: 'dashboard.py / projects.py', endpoint: 'DELETE /api/projects/{id}', status: 'Работает', detail: 'Запись реестра, снимки проекта и их копии в state-каталоге удаляются; исходный код на диске и история прогонов не трогаются. Во время активного прогона отклоняется.' },
   { action: 'Политики', module: 'dashboard.py', endpoint: 'GET /api/policies', status: 'Работает', detail: 'Чтение внешних политик оператора.' },
   { action: 'AI-профили и выбор модели', module: 'dashboard_profiles.py / ai_config.py', endpoint: 'GET /api/ai-configs', status: 'Работает', detail: 'Выбранный профиль передаётся при создании запуска.' },
   { action: 'Валидация конфигурации', module: 'ai_config.py', endpoint: 'POST /api/ai-configs/{id}/validate', status: 'Работает', detail: 'Проверка параметров, без обращения к модели.' },

@@ -54,6 +54,8 @@ export function Projects({ navigate }: { navigate: (to: string) => void }) {
   const [pathInput, setPathInput] = useState('')
   const [refusal, setRefusal] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [mobile, setMobile] = useState(() => window.innerWidth < 900)
 
   useEffect(() => {
@@ -93,6 +95,20 @@ export function Projects({ navigate }: { navigate: (to: string) => void }) {
     },
     [adapter, pushToast, bumpData],
   )
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    const res = await adapter.deleteProject(deleteTarget.id)
+    setDeleting(false)
+    if (!res.ok) {
+      pushToast(res.reason, 'error')
+      return
+    }
+    pushToast(`Проект «${deleteTarget.name}» удалён из реестра (снимков удалено: ${res.removedSnapshots}). Исходный код на диске не тронут.`, 'ok')
+    setDeleteTarget(null)
+    bumpData()
+  }, [adapter, deleteTarget, pushToast, bumpData])
 
   return (
     <>
@@ -137,6 +153,14 @@ export function Projects({ navigate }: { navigate: (to: string) => void }) {
                         Последний прогон
                       </Button>
                     )}
+                    <Button
+                      variant="danger"
+                      icon="trash"
+                      onClick={() => setDeleteTarget(p)}
+                      title="Удалить проект из реестра: снимки удалятся, исходный код на диске останется"
+                    >
+                      Удалить
+                    </Button>
                     <Button
                       variant="primary"
                       icon="play"
@@ -195,6 +219,30 @@ export function Projects({ navigate }: { navigate: (to: string) => void }) {
             <Button onClick={() => setAddOpen(false)}>Закрыть</Button>
             <Button variant="primary" onClick={addProject} disabled={busy || pathInput.trim() === ''}>
               {busy ? 'Передача…' : 'Передать backend'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={deleteTarget !== null}
+        onClose={() => { if (!deleting) setDeleteTarget(null) }}
+        title="Удалить проект?"
+      >
+        <div className="space-y-4">
+          <p className="text-[14px] leading-relaxed text-ink2">
+            Из реестра будет удалён проект <span className="font-bold">{deleteTarget?.name}</span>{' '}
+            <span className="font-mono text-[12.5px] text-ink3">({deleteTarget?.path})</span> и все его снимки
+            ({deleteTarget?.snapshots.length ?? 0}); копии снимков внутри state-каталога тоже удаляются.
+          </p>
+          <Note tone="warn" title="Что останется нетронутым:">
+            исходный код проекта на диске, история прогонов и их артефакты. Действие необратимо: вернуть
+            проект можно повторной регистрацией пути и новым снимком.
+          </Note>
+          <div className="flex justify-end gap-2.5">
+            <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>Отмена</Button>
+            <Button variant="danger" icon="trash" onClick={confirmDelete} disabled={deleting}>
+              {deleting ? 'Удаление…' : 'Удалить проект'}
             </Button>
           </div>
         </div>

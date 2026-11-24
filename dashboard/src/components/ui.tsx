@@ -31,6 +31,7 @@ export function Icon({ name, size = 16 }: { name: string; size?: number }) {
     eye: <><path d="M2.5 12S6 6.5 12 6.5 21.5 12 21.5 12 18 17.5 12 17.5 2.5 12 2.5 12Z" {...S} /><circle cx="12" cy="12" r="2.5" {...S} /></>,
     search: <><circle cx="11" cy="11" r="7" {...S} /><path d="m20 20-3.5-3.5" {...S} /></>,
     layers: <><path d="m12 3 9 5-9 5-9-5 9-5Z" {...S} /><path d="m3 13 9 5 9-5" {...S} /></>,
+    trash: <><path d="M4.5 7h15" {...S} /><path d="M9.5 7V5.5A1.5 1.5 0 0 1 11 4h2a1.5 1.5 0 0 1 1.5 1.5V7" {...S} /><path d="M6.5 7l1 12.5A1.5 1.5 0 0 0 9 21h6a1.5 1.5 0 0 0 1.5-1.5L17.5 7" {...S} /><path d="M10 11v6m4-6v6" {...S} /></>,
   }
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -339,7 +340,7 @@ export function Tabs({ tabs, active, onChange }: { tabs: { id: string; label: st
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
     e.preventDefault()
     const idx = tabs.findIndex((t) => t.id === active)
-    const next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length
+    const next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + NAV_LENGTH_FALLBACK(tabs)) % tabs.length
     onChange(tabs[next].id)
     ;(e.currentTarget.querySelector<HTMLElement>(`[data-tab="${tabs[next].id}"]`))?.focus()
   }
@@ -364,6 +365,10 @@ export function Tabs({ tabs, active, onChange }: { tabs: { id: string; label: st
       })}
     </div>
   )
+}
+
+function NAV_LENGTH_FALLBACK(tabs: { id: string; label: string; badge?: string }[]) {
+  return tabs.length
 }
 
 /* ============ тройной статус прогона: три lucian-карточки ============ */
