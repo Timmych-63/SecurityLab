@@ -31,6 +31,12 @@
   --accentsoft: rgba(106, 87, 242, 0.12);
   --accentink: #FFFFFF;
   --grad: linear-gradient(120deg, #7B61FF, #3D8BFF 55%, #1FB89A);
+  /* --- знак бренда: один в один как на вкладке браузера (favicon.svg) --- */
+  --brand-tile: #f1eee5;          /* кремовая плитка */
+  --brand-letter: #1e4d38;        /* тёмно-зелёная серифная S */
+  --brand-mark: #b8481f;          /* красно-оранжевый квадратик в углу */
+  --brand-text: #1e4d38;          /* надпись в том же стиле */
+  --brand-text-accent: #b8481f;   /* «Lab» — цвет квадратика */
   /* --- функциональные статусы (цвет + текст всегда) --- */
   --mint: #119C72;
   --mintsoft: rgba(17, 156, 114, 0.13);
@@ -68,6 +74,12 @@
   --accentsoft: rgba(183, 164, 255, 0.15);
   --accentink: #0B0C12;
   --grad: linear-gradient(120deg, #B7A4FF, #7DB4FF 55%, #A5F2D3);
+  /* знак бренда: плитка не меняется (как favicon на вкладке), текст светлеет для читаемости */
+  --brand-tile: #f1eee5;
+  --brand-letter: #1e4d38;
+  --brand-mark: #b8481f;
+  --brand-text: #9FD9B7;
+  --brand-text-accent: #E2763F;
   --mint: #7EE8C0;
   --mintsoft: rgba(126, 232, 192, 0.14);
   --mintink: #7EE8C0;
