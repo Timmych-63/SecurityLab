@@ -1,0 +1,54 @@
+name: Build dashboard
+
+# Автосборка интерфейса: после каждого изменения исходников дашборда
+# GitHub Actions собирает dashboard/ и коммитит свежую сборку в dashboard/dist.
+# Локальная сборка в dist.local по-прежнему перекрывает её при запуске.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'dashboard/dist/**'
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-dashboard
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Установка зависимостей
+        run: npm ci
+
+      - name: Сборка (tsc + vite)
+        run: npm run build
+
+      - name: Коммит свежей сборки в dashboard/dist
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A dist
+          if git diff --cached --quiet; then
+            echo "Сборка не изменилась — коммитить нечего."
+          else
+            git commit -m "Сборка дашборда: обновляю dashboard/dist из исходников [skip ci]"
+            git push
+          fi
