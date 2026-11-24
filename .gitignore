@@ -10,6 +10,8 @@ build/
 .securitylab/
 .env
 ai.local.toml
+ai.local.toml.*
+*.sqlite3*
 _backup_S11_*/
 reports/
 
