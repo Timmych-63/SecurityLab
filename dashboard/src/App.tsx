@@ -19,23 +19,46 @@ const NAV = [
   { to: '/integration', label: 'Интеграция', no: '05' },
 ]
 
-/* ---------- логотип: градиентная плитка lucian ---------- */
+/* ---------- логотип: знак как на вкладке браузера (favicon.svg) ---------- */
 
 function Wordmark() {
   return (
     <a href="#/projects" className="flex shrink-0 items-center gap-2.5" aria-label="SecurityLab — на главную">
+      {/* плитка один в один с favicon.svg: кремовый фон, серифная S, красный квадратик */}
       <span
-        className="grid h-9 w-9 place-items-center rounded-field text-[15px] font-black text-white shadow-[0_10px_18px_-8px_var(--shadow-strong)]"
-        style={{ background: 'var(--grad)' }}
+        className="relative grid h-9 w-9 shrink-0 place-items-center shadow-[0_10px_18px_-8px_var(--shadow-strong)]"
+        style={{ background: 'var(--brand-tile)', borderRadius: 5 }}
         aria-hidden="true"
       >
-        S
-      </span>
-      <span className="leading-none">
-        <span className="block text-[16px] font-extrabold tracking-[-0.03em]">
-          Security<span className="text-accent">Lab</span>
+        <span
+          className="translate-y-[-1px]"
+          style={{
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: 21,
+            lineHeight: 1,
+            fontWeight: 700,
+            color: 'var(--brand-letter)',
+          }}
+        >
+          S
         </span>
-        <span className="mt-1 block font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-ink3">
+        <span
+          className="absolute h-[5px] w-[5px]"
+          style={{ background: 'var(--brand-mark)', right: 6, bottom: 8 }}
+        />
+      </span>
+      {/* надпись в том же стиле: серифная гарнитура, зелёный + красный акцент */}
+      <span className="leading-none">
+        <span
+          className="block text-[17px] font-bold tracking-[-0.01em]"
+          style={{ fontFamily: 'Georgia, "Times New Roman", serif', color: 'var(--brand-text)' }}
+        >
+          Security<span style={{ color: 'var(--brand-text-accent)' }}>Lab</span>
+        </span>
+        <span
+          className="mt-1 block text-[10.5px] italic tracking-[0.05em]"
+          style={{ fontFamily: 'Georgia, "Times New Roman", serif', color: 'var(--brand-text)', opacity: 0.72 }}
+        >
           стенд проверки
         </span>
       </span>
