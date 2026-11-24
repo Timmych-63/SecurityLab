@@ -7,6 +7,7 @@ import json
 import mimetypes
 import re
 import secrets
+import shutil
 import threading
 import time
 import uuid
@@ -101,9 +102,34 @@ class Dashboard:
                 # This only enables the form; validate_input still verifies snapshot/package/policy.
                 python_project = python_project or bool(entries) or inventory.get('languages', {}).get('python', 0) > 0
                 rows.append(dict(id=p['id'],name=p['name'],path=p['source_path'],stack='Python · совместимость проверяется перед запуском' if python_project else 'Неподдерживаемый стек',
-                    profile='access-ai-s72-v1',supported=python_project,unsupportedReason=None if python_project else 'Поддерживается ограниченный профиль Python/FastAPI для проверки доступа',services=entries,stateDir=str(self.root),
+                    profile='access-ai-s72-v1',supported=python_project,unsupportedReason=None if python_project else 'Поддерживается ограниченный профиль Python/FastAPI для проверки доступа. В выбранной папке нет файлов Python (.py) и манифестов (pyproject.toml, requirements.txt): папка с документацией исследования (examples/research) не является целевым приложением. Зарегистрируйте каталог с кодом приложения, например examples/s7_repos/authz_vulnerable',services=entries,stateDir=str(self.root),
                     snapshots=[dict(id=s['id'],commit=s['id'][:12],createdAt=iso(s['created']),note='Content snapshot ID, not Git commit') for s in snaps]))
             return rows
+
+    def delete_project(self, project_id):
+        # Registry operation only: removes the project row, its snapshot rows and
+        # the snapshot copies inside the state directory. Source files of the
+        # project on disk are never touched; finished runs keep their evidence.
+        if self.active:
+            raise PolicyError('Идёт активный прогон; удаление проекта станет доступно после его завершения')
+        if not isinstance(project_id,str) or not ID.fullmatch(project_id):
+            raise PolicyError('Invalid project ID')
+        from .projects import remove_project
+        with contextlib.closing(Store(self.root)) as store:
+            snaps=remove_project(store,project_id)
+        removed=0
+        base=(self.root/'snapshots').resolve()
+        for sid in snaps:
+            folder=self.root/'snapshots'/sid
+            try:
+                resolved=folder.resolve()
+                if folder.is_dir() and resolved.is_relative_to(base):
+                    shutil.rmtree(resolved,ignore_errors=True)
+                    removed+=1
+            except OSError:
+                pass
+        return dict(ok=True,removedSnapshots=len(snaps),removedFolders=removed,
+                    note='Проект и его снимки удалены из реестра; исходный код проекта на диске не тронут, история прогонов сохранена')
 
     def validate_input(self, inp):
         if isinstance(inp, dict) and inp.get('profileId') == RESEARCH_PROFILE:
@@ -473,6 +499,9 @@ class Dashboard:
             if path=='/api/runs': return self.launch(data)
             if len(parts)==4 and parts[:2]==['api','runs'] and parts[3]=='cancel':
                 return self.cancel(parts[2])
+        if method=='DELETE':
+            if len(parts)==3 and parts[:2]==['api','projects']:
+                return self.delete_project(parts[2])
         raise FileNotFoundError(path)
 
 class Handler(BaseHTTPRequestHandler):
@@ -496,7 +525,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.headers.get('Origin',origin)!=origin:
                 return self.send(403,dict(ok=False,reason='Origin denied'))
             parsed=urlsplit(self.path); path=unquote(parsed.path)
-            if method=='POST':
+            if method in ('POST','DELETE'):
                 if self.headers.get('Origin')!=origin or not secrets.compare_digest(self.headers.get('X-CSRF-Token',''),self.server.token):
                     return self.send(403,dict(ok=False,reason='CSRF denied'))
                 length=int(self.headers.get('Content-Length','0'))
@@ -518,6 +547,7 @@ class Handler(BaseHTTPRequestHandler):
         except (PolicyError,ValueError,KeyError,TypeError,OSError) as exc: self.send(400,dict(ok=False,reason=str(exc)[:1500]))
     def do_GET(self): self.handle_request('GET')
     def do_POST(self): self.handle_request('POST')
+    def do_DELETE(self): self.handle_request('DELETE')
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)

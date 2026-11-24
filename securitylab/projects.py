@@ -44,6 +44,25 @@ def list_projects(store) -> list[dict]:
         FROM projects ORDER BY created,id''')]
 
 
+def remove_project(store, project_id: str) -> list[str]:
+    """Remove a project and its snapshot rows from the registry.
+
+    Returns the snapshot IDs that had content folders inside the state
+    directory. Source files of the project on disk are never touched;
+    finished runs keep their artifacts."""
+    if not isinstance(project_id, str) or not len(project_id) == 32 or any(c not in '0123456789abcdef' for c in project_id):
+        raise PolicyError('Invalid project ID')
+    with store.db:
+        row = store.db.execute('SELECT id FROM projects WHERE id=?', (project_id,)).fetchone()
+        if row is None:
+            raise PolicyError('Unknown project')
+        snaps = [r['id'] for r in store.db.execute(
+            'SELECT id FROM project_snapshots WHERE project_id=?', (project_id,)).fetchall()]
+        store.db.execute('DELETE FROM project_snapshots WHERE project_id=?', (project_id,))
+        store.db.execute('DELETE FROM projects WHERE id=?', (project_id,))
+    return snaps
+
+
 def project_detail(store, project_id: str) -> dict:
     if not isinstance(project_id, str) or not len(project_id) == 32 or any(c not in '0123456789abcdef' for c in project_id):
         raise PolicyError('Invalid project ID')
