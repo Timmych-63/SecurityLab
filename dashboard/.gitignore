@@ -3,3 +3,4 @@ server/seed.json
 
 node_modules/
 *.tsbuildinfo
+dist.local/

@@ -345,6 +345,8 @@ export interface SecurityLabAdapter {
   getProject(id: string): Promise<Project | null>
   createSnapshot(projectId: string): Promise<Snapshot | BackendRefusal>
   registerProject(path: string): Promise<Project | BackendRefusal>
+  /** Удаление проекта из реестра: снимки проекта удаляются, исходный код на диске и история прогонов не трогаются. */
+  deleteProject(id: string): Promise<{ ok: true; removedSnapshots: number; removedFolders: number } | BackendRefusal>
 
   listPolicies(): Promise<Policy[]>
   listAiConfigs(): Promise<AiConfig[]>

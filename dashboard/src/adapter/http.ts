@@ -69,7 +69,7 @@ export class HttpAdapter implements SecurityLabAdapter {
     return url.trim().replace(/\/+$/, '')
   }
 
-  private async raw<T>(path: string, init?: { method?: 'GET' | 'POST'; body?: unknown; csrf?: boolean; retry?: boolean }): Promise<T> {
+  private async raw<T>(path: string, init?: { method?: 'GET' | 'POST' | 'DELETE'; body?: unknown; csrf?: boolean; retry?: boolean }): Promise<T> {
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), ABORT_MS)
     try {
@@ -115,9 +115,9 @@ export class HttpAdapter implements SecurityLabAdapter {
   }
 
   /** Изменяющий вызов: HTTP-отказ превращается в BackendRefusal для экрана. */
-  private async action<T>(path: string, body?: unknown): Promise<T | BackendRefusal> {
+  private async action<T>(path: string, body?: unknown, method: 'POST' | 'DELETE' = 'POST'): Promise<T | BackendRefusal> {
     try {
-      return await this.raw<T & { ok?: true }>(path, { method: 'POST', body, csrf: true })
+      return await this.raw<T & { ok?: true }>(path, { method, body, csrf: true })
     } catch (e) {
       return { ok: false, reason: e instanceof Error ? e.message : 'сетевая ошибка' }
     }
@@ -152,6 +152,10 @@ export class HttpAdapter implements SecurityLabAdapter {
   }
   createSnapshot(projectId: string) {
     return this.action<Snapshot>(`/api/projects/${encodeURIComponent(projectId)}/snapshots`)
+  }
+  /** Реестр: удаление проекта. Снимки проекта удаляются, исходный код и прогоны не трогаются. */
+  deleteProject(id: string) {
+    return this.action<{ ok: true; removedSnapshots: number; removedFolders: number }>(`/api/projects/${encodeURIComponent(id)}`, undefined, 'DELETE')
   }
 
   /* ---------- справочники ---------- */
