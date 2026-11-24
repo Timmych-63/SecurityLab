@@ -247,7 +247,7 @@ export function Untrusted({ text, label }: { text: string; label?: string }) {
 
 /* ============ модальное окно ============ */
 
-export function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
+export function Modal({ open, onClose, title, wide = false, children }: { open: boolean; onClose: () => void; title: string; /** wide — для крупного содержимого (доказательства, JSON) */ wide?: boolean; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
   const restoreTo = useRef<HTMLElement | null>(null)
   // onClose в ref: эффект не пересоздаётся на каждый рендер родителя,
@@ -314,9 +314,9 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
         role="dialog"
         aria-modal="true"
         aria-labelledby={id}
-        className="anim-in w-full max-w-xl rounded-card bg-surface p-6 shadow-[0_0_0_1px_var(--line),0_40px_80px_-40px_var(--shadow-strong)]"
+        className={`anim-in flex max-h-[min(88vh,56rem)] w-full flex-col rounded-card bg-surface p-6 shadow-[0_0_0_1px_var(--line),0_40px_80px_-40px_var(--shadow-strong)] ${wide ? 'max-w-3xl' : 'max-w-xl'}`}
       >
-        <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="mb-4 flex shrink-0 items-start justify-between gap-4">
           <h2 id={id} className="text-[19px] font-extrabold tracking-[-0.03em]">{title}</h2>
           <button
             type="button"
@@ -327,7 +327,8 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
             <Icon name="cross" />
           </button>
         </div>
-        {children}
+        {/* длинное содержимое прокручивается внутри окна, заголовок остаётся видимым */}
+        <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
       </div>
     </div>
   )

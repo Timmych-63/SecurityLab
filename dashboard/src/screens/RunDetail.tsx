@@ -6,6 +6,7 @@ import {
   Button, Chip, EmptyState, Icon, KV, Modal, Note, Skeleton, StatusTriple, Tabs, Untrusted, Card, Overline,
 } from '../components/ui'
 import { StageBars } from '../components/charts'
+import { ArtifactViewer, copyText } from '../components/artifact'
 import { useIsMobile } from '../lib/hooks'
 import { fmtDateTime, fmtSec } from '../lib/format'
 import { translateStageText } from '../lib/ru'
@@ -223,15 +224,34 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
     pushToast(`Патч сохранён как ${res.fileName}. Содержимое — демо-данные, помеченные в интерфейсе.`, 'ok')
   }
 
-  const showArtifact = async (a: Artifact) => {
+  const fetchArtifact = async (a: Artifact) => {
     setArtBusy(true)
     const res = await adapter.getArtifact(run.id, a.id)
     setArtBusy(false)
     if ('ok' in res) {
       pushToast(res.reason, 'error')
+      return null
+    }
+    return res
+  }
+
+  const showArtifact = async (a: Artifact) => {
+    const res = await fetchArtifact(a)
+    if (res) setOpenArtifact(res)
+  }
+
+  const copyArtifact = async (a: Artifact) => {
+    const res = await fetchArtifact(a)
+    if (!res) return
+    if (!res.content) {
+      pushToast(`${a.name}: содержимое недоступно`, 'error')
       return
     }
-    setOpenArtifact(res)
+    const ok = await copyText(res.content)
+    pushToast(
+      ok ? `${a.name} скопирован в буфер обмена` : `Не удалось скопировать ${a.name} — откройте артефакт и скопируйте текст вручную`,
+      ok ? 'ok' : 'error',
+    )
   }
 
   const meta = (
@@ -616,9 +636,14 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
                       )}
                     </div>
                     {a.present && (
-                      <Button variant="ghost" icon="eye" onClick={() => showArtifact(a)} disabled={artBusy}>
-                        Открыть
-                      </Button>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <Button variant="ghost" icon="copy" onClick={() => copyArtifact(a)} disabled={artBusy} title="скопировать содержимое артефакта">
+                          Скопировать
+                        </Button>
+                        <Button variant="ghost" icon="eye" onClick={() => showArtifact(a)} disabled={artBusy}>
+                          Открыть
+                        </Button>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -629,7 +654,7 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
       </div>
 
       {/* модальное окно артефакта */}
-      <Modal open={openArtifact !== null} onClose={() => setOpenArtifact(null)} title={openArtifact?.name ?? ''}>
+      <Modal open={openArtifact !== null} onClose={() => setOpenArtifact(null)} title={openArtifact?.name ?? ''} wide>
         {openArtifact && (
           <div className="space-y-4">
             {openArtifact.kind === 'html' && (
@@ -637,7 +662,7 @@ export function RunDetail({ runId, navigate }: { runId: string; navigate: (to: s
                 содержимое отчётов недоверенное — показывается текст, теги не исполняются.
               </Note>
             )}
-            <Untrusted text={openArtifact.content ?? ''} />
+            <ArtifactViewer artifact={openArtifact} />
             <p className="text-[12px] text-ink3">
               {mode === 'demo' ? 'Демо-содержимое из браузера.' : mode === 'sim-server' ? 'Источник: сервер симуляции (demo: true) — коммиты и события сценария фиктивные.' : 'Содержимое отдаёт сервер по идентификатору.'}
             </p>
