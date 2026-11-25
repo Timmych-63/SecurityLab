@@ -154,12 +154,24 @@ baseline_not_reproduced`, DONE при refuted — в этих случаях п�
 ```powershell
 docker compose -f compose.ai.yaml --profile setup run --rm model-pull
 docker compose -f compose.ai.yaml exec model ollama list   # 4b в списке (короткий ID)
-docker compose -f compose.ai.yaml exec model sh -c "sha256sum /root/.ollama/models/manifests/registry.ollama.ai/library/qwen3.5/4b"   # полный digest, 64 hex
-# ai.local.toml: model = "qwen3.5:4b", model_digest = "<полный digest из sha256sum>", остальные ключи как были
+docker compose -f compose.ai.yaml exec model sh -c "curl -s http://localhost:11434/api/tags"   # поле digest у qwen3.5:4b
+# ai.local.toml: model = "qwen3.5:4b", model_digest = "<поле digest из /api/tags>", остальные ключи как были
 py -3 -m securitylab ai-smoke
 ```
 
-Короткий ID из `ollama list` — префикс полного digest; в `model_digest` нужен полный.
+ВАЖНО: источник `model_digest` — только `/api/tags`. Worker сверяет `model_digest`
+из `ai.local.toml` с полем `digest` из `/api/tags` (точное строковое сравнение в
+hermes_worker.py). Sha256sum файла манифеста на диске — другой источник, значения
+могут не совпадать: у qwen3.5:4b файл манифеста хешируется в `e0b8c85c…`, тогда как
+ollama отдаёт в API digest, начинающийся с `d8b0f5e9760c` — короткий ID из
+`ollama list`, его первые 12 символов, используйте их для сверки. У 2b оба значения
+совпадали, поэтому прежняя инструкция со sha256sum работала. Если curl в контейнере
+модели отсутствует:
+
+```powershell
+docker run --rm --network securitylab-ai-private curlimages/curl -s http://model:11434/api/tags
+```
+
 Если 4b не появился в списке у работающего контейнера модели —
 `docker compose -f compose.ai.yaml restart model` и проверьте снова. Другая модель —
 `$env:OLLAMA_PULL_MODEL = "<тег>"` перед командой пулла.

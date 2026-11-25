@@ -1,6 +1,10 @@
 # Copy to ai.local.toml and select explicitly via SECURITYLAB_AI_CONFIG.
 [ai]
 model = "qwen3.5:2b"
+# model_digest must equal the "digest" field that /api/tags reports for the
+# selected model (exact string match in hermes_worker.py). Do not substitute
+# sha256sum of the manifest file: it can differ from the digest reported by
+# the API (observed with qwen3.5:4b).
 model_digest = "0689d44085e06d165161a8a9a1731344278cfb5aade63a3c3dbdb48ab54b130a"
 server_url = "http://model:11434"
 network = "securitylab-ai-private"
