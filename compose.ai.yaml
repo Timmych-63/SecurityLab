@@ -35,9 +35,15 @@ services:
     image: ollama/ollama:0.40.15
     profiles: [setup]
     volumes: [models:/root/.ollama]
+    # Какую модель тянуть, задаётся снаружи переменной OLLAMA_PULL_MODEL,
+    # по умолчанию qwen3.5:4b. Контейнер модели живёт в закрытой сети
+    # (internal: true) и в интернет не ходит, поэтому пул делается этим
+    # сервисом на обычной сети; прогресс пулла виден в консоли.
+    environment:
+      OLLAMA_PULL_MODEL: "${OLLAMA_PULL_MODEL:-qwen3.5:4b}"
     entrypoint: [/bin/sh, -c]
     command:
-      - 'ollama serve & pid=$$!; trap "kill $$pid" EXIT; i=0; until ollama list >/dev/null 2>&1; do i=$$((i+1)); [ $$i -lt 30 ] || exit 1; sleep 1; done; ollama pull qwen3.5:2b'
+      - 'ollama serve & pid=$$!; trap "kill $$pid" EXIT; i=0; until ollama list >/dev/null 2>&1; do i=$$((i+1)); [ $$i -lt 30 ] || exit 1; sleep 1; done; ollama pull "$$OLLAMA_PULL_MODEL"'
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
 networks:

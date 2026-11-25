@@ -144,14 +144,25 @@ baseline_not_reproduced`, DONE при refuted — в этих случаях п�
 
 ## Переход на qwen3.5:4b (опционально, после прогона №7)
 
-Если покрытие на 2b останется скудным или повысятся частоты отклонений схемы:
+Если покрытие на 2b останется скудным или повысятся частоты отклонений схемы.
+Контейнер модели живёт в закрытой сети (`internal: true`) и в интернет не ходит,
+поэтому пул делается сервисом `model-pull` (профиль `setup`) на обычной сети. Модель
+задаётся переменной `OLLAMA_PULL_MODEL`, по умолчанию `qwen3.5:4b`; прогресс загрузки
+виден в консоли. Аргументы после `model-pull` не передавать — они заменяют команду
+сервиса, и контейнер завершится без загрузки.
 
 ```powershell
-docker compose -f compose.ai.yaml exec -T model ollama pull qwen3.5:4b
-docker compose -f compose.ai.yaml exec -T model ollama list   # скопируйте digest 4b
-# ai.local.toml: model = "qwen3.5:4b", model_digest = "<новый digest>", остальные ключи как были
+docker compose -f compose.ai.yaml --profile setup run --rm model-pull
+docker compose -f compose.ai.yaml exec model ollama list   # 4b в списке (короткий ID)
+docker compose -f compose.ai.yaml exec model sh -c "sha256sum /root/.ollama/models/manifests/registry.ollama.ai/library/qwen3.5/4b"   # полный digest, 64 hex
+# ai.local.toml: model = "qwen3.5:4b", model_digest = "<полный digest из sha256sum>", остальные ключи как были
 py -3 -m securitylab ai-smoke
 ```
+
+Короткий ID из `ollama list` — префикс полного digest; в `model_digest` нужен полный.
+Если 4b не появился в списке у работающего контейнера модели —
+`docker compose -f compose.ai.yaml restart model` и проверьте снова. Другая модель —
+`$env:OLLAMA_PULL_MODEL = "<тег>"` перед командой пулла.
 
 Замечания: сервис `model` ограничен `mem_limit: 6g` и `cpus: 2` — 4b в квантованном
 виде помещается, но генерация медленнее 2b, поэтому для первого прогона держите
